@@ -10,11 +10,14 @@ import datetime
 from bson import objectid
 from passlib.apps import custom_app_context as pwd_context
 
+
 client = MongoClient('localhost', 27017)
+
 
 class BaseHandler(tornado.web.RequestHandler):
 	def get_current_user(self):
 		return self.get_secure_cookie("username")
+
 
 class MainHandler(BaseHandler): 
 	def get(self):
@@ -30,14 +33,14 @@ class SignUpHandler(tornado.web.RequestHandler):
 		username = self.get_argument('username')
 		password = self.get_argument('password')
 		hashed_pwd = pwd_context.encrypt(password)
-		user = models.userinfo.User.objects(username=username)
+		# user = models.userinfo.User.objects(username=username)
 
 		if len(user) == 0:		
-			newuser = models.userinfo.User(
-				username = username,
-				password = hashed_pwd,
-				adjectives = models.userinfo.UserAdjectives()
-			)
+			# newuser = models.userinfo.User(
+			# 	username = username,
+			# 	password = hashed_pwd,
+			# 	adjectives = models.userinfo.UserAdjectives()
+			# )
 			if newuser.save():
 				response = {'response':200, 'data':'signed up!'}
 			else:
@@ -69,3 +72,5 @@ class LoginHandler(tornado.web.RequestHandler):
 
 	def get(self):
 		self.write( "redirect to login")
+
+		
