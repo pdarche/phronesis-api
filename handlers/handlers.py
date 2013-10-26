@@ -1,4 +1,5 @@
 import tornado.web
+import tornado.gen
 import requests
 import json
 from settings import settings
@@ -84,7 +85,7 @@ class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin):
 			self.get_authenticated_user(self.async_callback(self._fitbit_on_auth))
 			return
 
-		# if the user has fitbit info, then respond accordingly
+		# if the user has fitbit info, respond accordingly
 
 		self.authorize_redirect()
 
@@ -119,9 +120,27 @@ class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin):
 		self.write(response)
 		self.finish()
 
+class FitbitImportHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
+	@tornado.web.asynchronous
+	@tornado.gen.engine
+	def get(self):
+		curr_user = self.get_secure_cookie("username")
+		curr_user = db.users.find_one({"username":curr_user})
+		user_id = curr_user["fitbit"]["username"]
+		access_token = curr_user["fitbit"]["access_token"]
+		member_since = curr_user["fitbit"]["user"]["memberSince"]
+
+		response = yield tornado.gen.Task(self.fitbit_request,
+			'/user/-/activities/steps/date/2011-01-01/today',
+			access_token = access_token,
+			user_id = user_id)
+		
+		self.write(response)
+		self.finish()
+		
+
 class FitbitPushHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
 	def post(self):
 		print 'got some stuff %r' % self.request
-		# accessToken = self.get_access_token()
-		# memberSince = self.get_member_since()
-		# userID = self.get_user_id()			
+
+
