@@ -15,9 +15,11 @@ from passlib.apps import custom_app_context as pwd_context
 from models.user import User
 import mixins.mixins as mixins
 
+from tasks.tasks import import_fitbit
 
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
+
 
 class BaseHandler(tornado.web.RequestHandler):
 	def get_current_user(self):
@@ -120,27 +122,29 @@ class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin):
 		self.write(response)
 		self.finish()
 
+
 class FitbitImportHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
 	@tornado.web.asynchronous
 	@tornado.gen.engine
 	def get(self):
 		curr_user = self.get_secure_cookie("username")
 		curr_user = db.users.find_one({"username":curr_user})
-		user_id = curr_user["fitbit"]["username"]
-		access_token = curr_user["fitbit"]["access_token"]
-		member_since = curr_user["fitbit"]["user"]["memberSince"]
 
-		response = yield tornado.gen.Task(self.fitbit_request,
-			'/user/-/activities/steps/date/2011-01-01/today',
-			access_token = access_token,
-			user_id = user_id)
-		
-		self.write(response)
+		import_fitbit.delay(curr_user["fitbit"])
+
+		self.write(json.dumps({"response":200,"data":"Success"}))
 		self.finish()
-		
+
 
 class FitbitPushHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
 	def post(self):
 		print 'got some stuff %r' % self.request
+
+
+class CeleryTestHandler(BaseHandler):
+	def get(self):
+		result = add.delay(4, 4)
+
+
 
 
