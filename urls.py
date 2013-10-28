@@ -10,5 +10,6 @@ url_patterns = [
     (r"/connect/fitbit", handlers.FitbitConnectHandler),
     (r"/import/fitbit", handlers.FitbitImportHandler),
     (r"/push/fitbit", handlers.FitbitPushHandler),
-    (r"/celery", handlers.CeleryTestHandler)
+    (r"/connect/moves", handlers.MovesConnectHandler),
+    (r"/import/moves", handlers.MovesStorylineHandler)
 ]

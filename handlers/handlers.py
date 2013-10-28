@@ -141,10 +141,55 @@ class FitbitPushHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
 		print 'got some stuff %r' % self.request
 
 
-class CeleryTestHandler(BaseHandler):
-	def get(self):
-		result = add.delay(4, 4)
 
+class MovesConnectHandler(tornado.web.RequestHandler, mixins.MovesMixin):
+    @tornado.web.asynchronous
+    def get(self):
+		if self.get_argument("code", False):
+			self.get_authenticated_user(
+			    redirect_uri='http://localhost:8080/connect/moves',
+			    client_id=settings["moves_client_id"],
+			    client_secret=self.settings["moves_client_secret"],
+			    code=self.get_argument("code"),
+			    callback=self.async_callback(self._on_login)
+			)
+			return
+
+		self.authorize_redirect(
+			redirect_uri='http://localhost:8080/connect/moves',
+			client_id=settings["moves_client_id"],
+			scope="activity location",
+			response_type="code"
+		)
+
+    def _on_login(self, user):
+        # Do something interesting with user here. See: user["access_token"]
+		curr_user = self.get_secure_cookie("username")
+		db.users.update({"username":curr_user}, {'$set': {"moves": user}})
+
+		self.write(json.dumps({"response":200, "data":"sucess"}))
+		self.finish()
+
+
+class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
+	@tornado.web.asynchronous
+	def get(self):
+		curr_user = self.get_secure_cookie("username")
+		curr_user = db.users.find_one({"username":curr_user})
+		access_token = curr_user["moves"]["access_token"]["access_token"]
+
+		print access_token
+
+		self.moves_request(
+		    path="/user/storyline/daily/20131027",
+		    callback=self._on_data,
+		    access_token=access_token
+		)
+
+	def _on_data(self, data):
+
+		self.write(json.dumps(data))
+		self.finish()
 
 
 
