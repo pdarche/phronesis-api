@@ -1,8 +1,14 @@
 import tornado.web
 import tornado.gen
 import mixins.mixins as mixins
+from settings import settings
+
 from pymongo import MongoClient
 from celery import Celery
+
+import json
+import fitbit
+
 
 celery = Celery('tasks', broker='amqp://guest@localhost//')
 
@@ -29,15 +35,13 @@ class FitbitRequest(tornado.web.RequestHandler, mixins.FitbitMixin):
 			'body/fat', 'body/fat', 
 		]
 
-		# db.fitbit_test.insert({"test":"testing this shit"})
-
 		# for feature in fitbit_features:
-		response = yield tornado.gen.Task(
-			self.fitbit_request,
-			'/user/-/activities/steps/date/2011-01-01/today',
-			access_token = access_token,
-			user_id = user_id
-		)
+		# response = yield tornado.gen.Task(
+		# 	self.fitbit_request,
+		# 	'/user/-/activities/steps/date/2011-01-01/today',
+		# 	access_token = access_token,
+		# 	user_id = user_id
+		# )
 		# activities.append(respones)
 		
 
@@ -47,9 +51,20 @@ def add(x, y):
 
 
 @celery.task
-def import_fitbit(fitbit):
-	fb = FitbitRequest()
-	fb.import_data(fitbit)
-	return "done"
+def import_fitbit(access_token):
+	f = fitbit.Fitbit(
+			settings['fitbit_consumer_key'], 
+			settings['fitbit_consumer_secret'],
+			user_key=access_token['key'],
+			user_secret=access_token['secret']
+		)
+	res = f.time_series(
+		'activities/steps',
+		user_id=access_token['encoded_user_id'], 
+		base_date="2012-01-01",
+		end_date="today"
+	)
+	db.steps.insert(res['activities-steps'])
+	return "success"
 
 

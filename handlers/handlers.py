@@ -130,7 +130,7 @@ class FitbitImportHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
 		curr_user = self.get_secure_cookie("username")
 		curr_user = db.users.find_one({"username":curr_user})
 
-		import_fitbit.delay(curr_user["fitbit"])
+		import_fitbit.delay(curr_user["fitbit"]["access_token"])
 
 		self.write(json.dumps({"response":200,"data":"Success"}))
 		self.finish()
@@ -181,9 +181,10 @@ class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 		print access_token
 
 		self.moves_request(
-		    path="/user/storyline/daily/20131027",
+		    path="/user/summary/daily/201310",
 		    callback=self._on_data,
-		    access_token=access_token
+		    access_token=access_token,
+		    args={"trackPoints": "true"}
 		)
 
 	def _on_data(self, data):
