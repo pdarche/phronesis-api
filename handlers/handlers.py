@@ -131,8 +131,15 @@ class FitbitImportHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
 		curr_user = db.users.find_one({"username":curr_user})
 
 		import_fitbit.delay(curr_user["fitbit"]["access_token"])
+		# response = yield tornado.gen.Task(
+		# 	self.fitbit_request,
+		# 	'/user/-/sleep/minutesAsleep/date/2011-01-01/today',
+		# 	access_token = curr_user['fitbit']['access_token'],
+		# 	user_id = curr_user['fitbit']['username']
+		# )
 
 		self.write(json.dumps({"response":200,"data":"Success"}))
+		# self.write(json.dumps(response))
 		self.finish()
 
 
