@@ -6,6 +6,7 @@ from models.object import FitbitActivity
 from models.object import FitbitSleep
 from models.object import FitbitActivity
 from models.object import FitbitBody
+from models.object import FitbitFood
 
 from pymongo import MongoClient
 from celery import Celery
@@ -99,6 +100,13 @@ def daily_body(tup):
 	doc['fat'] = tup[2]['value']
 	return doc
 
+def daily_food(tup):
+	doc = copy.deepcopy(FitbitFood)
+	doc['date'] = tup[0]['dateTime']
+	doc['caloriesIn]'] = tup[0]['value']
+	doc['water'] = tup[1]['value']
+	return doc	
+
 
 @celery.task
 def add(x, y):
@@ -127,6 +135,10 @@ def import_fitbit(access_token):
 		'body/fat'
 	]
 
+	food = [
+		'foods/log/caloriesIn', 'foods/log/water'
+	]
+
 	f = fitbit.Fitbit(
 			settings['fitbit_consumer_key'], 
 			settings['fitbit_consumer_secret'],
@@ -140,10 +152,14 @@ def import_fitbit(access_token):
 	sleep_records = [daily_sleep(tup) for tup in sleep_records]
 	body_records = zip(*[fetch_resource(f, access_token['encoded_user_id'], resource) for resource in body])
 	body_records = [daily_body(tup) for tup in body_records]
+	food_records = zip(*[fetch_resource(f, access_token['encoded_user_id'], resource) for resource in food])
+	food_records = [daily_food(tup) for tup in food_records]
 
 	db.activities.insert(activity_records)
 	db.sleep.insert(sleep_records)
 	db.body.insert(body_records)
+	db.food.insert(food_records)
+	
 	return "success"
 
 

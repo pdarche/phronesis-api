@@ -15,6 +15,7 @@ from passlib.apps import custom_app_context as pwd_context
 from models.user import User
 import mixins.mixins as mixins
 
+from tasks.tasks import add
 from tasks.tasks import import_fitbit
 
 client = MongoClient('localhost', 27017)
@@ -130,16 +131,17 @@ class FitbitImportHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
 		curr_user = self.get_secure_cookie("username")
 		curr_user = db.users.find_one({"username":curr_user})
 
-		import_fitbit.delay(curr_user["fitbit"]["access_token"])
-		# response = yield tornado.gen.Task(
-		# 	self.fitbit_request,
-		# 	'/user/-/sleep/minutesAsleep/date/2011-01-01/today',
-		# 	access_token = curr_user['fitbit']['access_token'],
-		# 	user_id = curr_user['fitbit']['username']
-		# )
+		# import_fitbit.delay(curr_user["fitbit"]["access_token"])
+		
+		response = yield tornado.gen.Task(
+			self.fitbit_request,
+			'/user/-/foods/log/date/2013-11-10',
+			access_token = curr_user['fitbit']['access_token'],
+			user_id = curr_user['fitbit']['username']
+		)
 
-		self.write(json.dumps({"response":200,"data":"Success"}))
-		# self.write(json.dumps(response))
+		# self.write(json.dumps({"response":200,"data":"Success"}))
+		self.write(json.dumps(response))
 		self.finish()
 
 
@@ -200,4 +202,28 @@ class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 		self.finish()
 
 
+class MovesImportHandler(tornado.web.RequestHandler, mixins.MovesMixin):
+	@tornado.web.asynchronous
+	def get(self):
+		curr_user = self.get_secure_cookie("username")
+		curr_user = db.users.find_one({"username":curr_user})
+		access_token = curr_user["moves"]["access_token"]["access_token"]
+
+		self.moves_request(
+		    path="/user/summary/daily/201310",
+		    callback=self._on_data,
+		    access_token=access_token,
+		    args={"trackPoints": "true"}
+		)
+
+	def _on_data(self, data):
+
+		self.write(json.dumps(data))
+		self.finish()
+
+# class CeleryHandler(tornado.web.RequestHandler):
+# 	def get(self):
+# 		add.delay(4,4)
+# 		self.write("testing")
+		
 

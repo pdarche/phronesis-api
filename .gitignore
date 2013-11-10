@@ -1,5 +1,7 @@
 *.py[cod]
 
+todo.txt
+
 settings.py
 notebooks
 notebooks/*

@@ -27,5 +27,11 @@ FitbitBody = {
 	'date': '',
 	'weight': None,
 	'bmi': None,
-	'fat': None, 
+	'fat': None
+}
+
+FitbitFood = {
+	'date': '',
+	'calories': None,
+	'water': None
 }
