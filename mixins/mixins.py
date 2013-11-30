@@ -830,14 +830,14 @@ class WithingsMixin(tornado.auth.OAuthMixin):
     _OAUTH_AUTHORIZE_URL = "https://oauth.withings.com/account/authorize"
     _OAUTH_NO_CALLBACKS = False
     _WITHINGS_BASE_URL = "http://wbsapi.withings.net"
-    _OAUTH_VERSION ="1.0"
+    _OAUTH_VERSION ="1.0a"
     
 
     def authenticate_redirect(self, callback_uri=None):
         """Just like authorize_redirect(), but auto-redirects if authorized.
 
         This is generally the right interface to use if you are using
-        Zeo for single-sign on.
+        Withings for single-sign on.
         """
 
         http = self.get_auth_http_client()

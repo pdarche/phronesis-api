@@ -221,6 +221,39 @@ class MovesImportHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 		self.write(json.dumps(data))
 		self.finish()
 
+
+class WithingsConnectHandler(BaseHandler, mixins.WithingsMixin):
+	# @tornado.web.authenticated
+	@tornado.web.asynchronous
+	def get(self):
+		curr_user = self.get_secure_cookie("username")
+		curr_user = db.user.find_one({"username":curr_user})
+
+		if self.get_argument('oauth_token', None):
+			print "doin dis thang"
+			self.get_authenticated_user(self.async_callback(self._fitbit_on_auth))
+			return
+
+		callback_uri = { "oauth_callback" : "http://localhost:8080/connect/withings" }
+		self.authorize_withings_redirect(extra_params=callback_uri)
+
+	def _withings_on_auth(self, user):
+		if not user:
+			self.clear_all_cookies()
+			raise tornado.web.HTTPError(500, 'Withings authentication failed')
+
+		curr_user = self.get_secure_cookie("username")
+		db.users.update({"username":curr_user}, {'$set': {"fitbit": user}})
+
+
+	def _withings_on_user(self, user):
+		if not user:
+			self.clear_all_cookies()
+			raise tornado.web.HTTPError(500, "Couldn't retrieve user information")
+
+		self.write(json.dumps(user))
+		self.finish()
+
 # class CeleryHandler(tornado.web.RequestHandler):
 # 	def get(self):
 # 		add.delay(4,4)

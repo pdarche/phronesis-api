@@ -11,6 +11,7 @@ url_patterns = [
     (r"/import/fitbit", handlers.FitbitImportHandler),
     (r"/push/fitbit", handlers.FitbitPushHandler),
     (r"/connect/moves", handlers.MovesConnectHandler),
-    (r"/import/moves", handlers.MovesStorylineHandler)
+    (r"/import/moves", handlers.MovesStorylineHandler),
+    (r"/connect/withings", handlers.WithingsConnectHandler),
     # (r"/test", handlers.CeleryHandler)
 ]
