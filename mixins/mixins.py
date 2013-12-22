@@ -830,8 +830,7 @@ class WithingsMixin(tornado.auth.OAuthMixin):
     _OAUTH_AUTHORIZE_URL = "https://oauth.withings.com/account/authorize"
     _OAUTH_NO_CALLBACKS = False
     _WITHINGS_BASE_URL = "http://wbsapi.withings.net"
-    _OAUTH_VERSION ="1.0a"
-    
+    _OAUTH_VERSION ="1.0"
 
     def authenticate_redirect(self, callback_uri=None):
         """Just like authorize_redirect(), but auto-redirects if authorized.
@@ -943,11 +942,41 @@ class WithingsMixin(tornado.auth.OAuthMixin):
                     self._OAUTH_AUTHORIZE_URL,
                 callback_uri))
         else:
+            print "the url i should be fetching form: %r" % self._oauth_request_token_url(extra_params=extra_params)
             http_client.fetch(
                 self._oauth_request_token_url(extra_params=extra_params),
-                self.async_callback(
-                    self._on_request_token, self._OAUTH_AUTHORIZE_URL,
-                    callback_uri))
+                self._test_cb)
+            # http_client.fetch(
+            #     self._oauth_request_token_url(extra_params=extra_params),
+            #     self.async_callback(
+            #         self._test_cb, self._OAUTH_AUTHORIZE_URL,
+            #         callback_uri))
+
+
+    def _test_cb(self, a):
+        print ""
+        print ""
+        print a
+        self.finish()
+
+    def _on_withings_request_token(self, authorize_url, callback_uri,
+                            callback, response):        
+        if response.error:
+            raise Exception("Could not get request token: %s" % response.error)
+        request_token = _oauth_parse_response(response.body)        
+        data = (base64.b64encode(escape.utf8(request_token["key"])) + b"|" +
+                base64.b64encode(escape.utf8(request_token["secret"])))
+        self.set_cookie("_oauth_request_token", data)
+        args = dict(oauth_token=request_token["key"])
+        if callback_uri == "oob":
+            self.finish(authorize_url + "?" + urllib_parse.urlencode(args))
+            callback()
+            return
+        elif callback_uri:
+            args["oauth_callback"] = urlparse.urljoin(
+                self.request.full_url(), callback_uri)
+        self.redirect(authorize_url + "?" + urllib_parse.urlencode(args))
+        callback()        
 
 
     def get_authenticated_withings_user(self, callback, http_client=None):
@@ -1018,7 +1047,6 @@ class MovesMixin(object):
     def httpclient_instance(self):
         return httpclient.AsyncHTTPClient()
 
-
     def authorize_redirect(self, redirect_uri=None, client_id=None, **kwargs):
         """Redirects the user to obtain OAuth authorization for this service.
 
@@ -1035,7 +1063,6 @@ class MovesMixin(object):
         }
         if kwargs: args.update(kwargs)
         self.redirect(url_concat(self._OAUTH_AUTHORIZE_URL, args))       # Why _OAUTH_AUTHORIZE_URL fails?
-
 
     def get_authenticated_user(self, redirect_uri, client_id, client_secret, code, callback):
         """
@@ -1080,21 +1107,17 @@ class MovesMixin(object):
             body=json.dumps(args)
         )
 
-
     def _on_access_token(self, redirect_uri, client_id, client_secret, callback, response):
         if response.error:
             logging.warning('Moves auth error: %s' % str(response))
             callback(None)
             return
-        
         session = escape.json_decode(response.body)
-
         self.moves_request(
             path="/user/profile",
             callback=self.async_callback(self._on_get_user_info, callback, session),
             access_token=session["access_token"]
         )
-
 
     def _on_get_user_info(self, callback, session, user):
         if user is None:
@@ -1103,7 +1126,6 @@ class MovesMixin(object):
         session = {"access_token" : session}    
         user = dict(user.items() + session.items())
         callback(user)
-
 
     def moves_request(self, path, callback, access_token=None, post_args=None, **args):
         """
@@ -1133,7 +1155,6 @@ class MovesMixin(object):
             self.httpclient_instance.fetch(url, method="POST", body=urllib.urlencode(post_args), callback=callback)
         else:
             self.httpclient_instance.fetch(url, callback=callback)
-
 
     def _on_moves_request(self, callback, response):
         response_body = escape.json_decode(response.body)
