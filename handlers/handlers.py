@@ -79,7 +79,7 @@ class FitbitSubscribeHandler(BaseHandler):
 	def post(self):	
 		data = self.request.body
 		db.fitbit_test.insert({"post_body": data})
-
+		print "getting a post"
 
 class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin): 
 	@tornado.web.authenticated
