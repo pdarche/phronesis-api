@@ -13,5 +13,6 @@ url_patterns = [
     (r"/connect/moves", handlers.MovesConnectHandler),
     (r"/import/moves", handlers.MovesStorylineHandler),
     (r"/connect/withings", handlers.WithingsConnectHandler),
+    (r"/test/fitbit", handlers.FitbitSubscribeHandler),
     # (r"/test", handlers.CeleryHandler)
 ]

@@ -1,6 +1,5 @@
 import tornado.web
 import tornado.gen
-
 import requests
 import json
 from settings import settings
@@ -21,7 +20,6 @@ from tasks.tasks import import_fitbit
 
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
-
 
 class BaseHandler(tornado.web.RequestHandler):
 	def get_current_user(self):
@@ -75,6 +73,12 @@ class LoginHandler(tornado.web.RequestHandler):
 	def get(self):
 		self.render('login.html')
 		# self.write({"response":300, "data":"redirect"})
+
+
+class FitbitSubscribeHandler(BaseHandler):
+	def post(self):	
+		data = self.request.body
+		db.fitbit_test.insert({"post_body": data})
 
 
 class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin): 
