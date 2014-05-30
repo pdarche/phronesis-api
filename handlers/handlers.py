@@ -80,11 +80,11 @@ class FitbitSubscribeHandler(BaseHandler):
 		files = self.request.files
 		for update in files['updates']:
 			for body in json.loads(update['body']):
-				db.fitbit_test.insert(body)
-
-		add.delay(4,4)
-		self.set_status(204)
+				# db.fitbit_test.insert(body)
+				add.delay(4,4)
 		
+		self.set_status(204)
+
 
 class FitbitFetchResource():
 	def get(self):
