@@ -15,8 +15,8 @@ from passlib.apps import custom_app_context as pwd_context
 from models.user import User
 import mixins.mixins as mixins
 
-#from tasks.tasks import add
-#from tasks.tasks import import_fitbit
+from tasks.tasks import add
+# from tasks.tasks import import_fitbit
 
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
@@ -26,7 +26,7 @@ class BaseHandler(tornado.web.RequestHandler):
 		return self.get_secure_cookie("username")
 
 
-class MainHandler(BaseHandler): 
+class MainHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
 		username = self.get_secure_cookie('username')
@@ -81,8 +81,18 @@ class FitbitSubscribeHandler(BaseHandler):
 		for update in files['updates']:
 			for body in json.loads(update['body']):
 				db.fitbit_test.insert(body)
-				
+
+		add.delay(4,4)
 		self.set_status(204)
+		
+
+class FitbitFetchResource():
+	def get(self):
+		paths = {
+			"sleep": ,
+			"activities": ,
+			"foods":
+		}
 
 
 class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin): 

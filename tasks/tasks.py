@@ -114,6 +114,18 @@ def add(x, y):
 
 
 @celery.task
+def fetch_fitbit(resources):
+	for resource in resources:
+	    if resource['collectionType'] == 'foods':
+	        foods_processor(p)
+	    elif resource['collectionType'] == 'activities':
+	        activities_processor(p)
+	    elif resource['collectionType'] == 'sleep':
+	        sleep_processor(p)
+	    time.sleep(.25)		
+
+
+@celery.task
 def import_fitbit(access_token):
 	activities = [
 		'activities/steps', 'activities/calories', 
