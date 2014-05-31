@@ -242,7 +242,7 @@ class FitbitFetchSleep():
 		self.delete_fitbit_records('fitbit_sleep', [date])
 		# create the food records for the given date
 		print "fetching records for date %s " % date
-		self.sleep_records = fitbit_sleeps([date]).to_dict(outtype='records')
+		self.sleep_records = self.fitbit_sleeps([date]).to_dict(outtype='records')
 		# insert the new records
 		print "inserting new records for date %s " % date
 		self.insert_fitbit_sleep_records(sleep_records)
