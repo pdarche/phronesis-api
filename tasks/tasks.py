@@ -391,10 +391,6 @@ def foods_processor(update):
 
 
 ##### CELERY TASKS #####
-
-
-
-
 @celery.task
 def add(x, y):
     return x + y
