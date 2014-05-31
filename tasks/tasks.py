@@ -27,19 +27,139 @@ celery = Celery('tasks', broker='amqp://guest@localhost//')
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
 
-
-global conn_string
-global conn
-global cursor
 # conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
 # conn = psycopg2.connect(conn_string)
 # cursor = conn.cursor()
+
+class FitbitFetchFood():
+	__init__(self, collectionType, date):
+		self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
+		self.conn = psycopg2.connect(conn_string)
+		self.cursor = conn.cursor()
+		self.collectionType = collectionType
+		self.date = dates
+		self.mealTypeMapping = {
+		    "1": "breakfast",
+		    "2": "morning snack",
+		    "3": "lunch",
+		    "4": "afternoon snack",
+		    "5": "dinner",
+		    "7": "anytime"
+		}
+
+		self.foods_processor(collectionType, date)
+		self.conn.close()
+
+	def delete_fitbit_records(self, table, dates):
+	    # maybe put another cursor here?
+	    for date in dates:
+	        sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
+	        self.cursor.execute(sql)
+	        self.conn.commit()
+
+
+	def flatten_food(self, food):
+	    mealTypeId = food['loggedFood']['mealTypeId']
+	    meal = self.mealTypeMapping[str(mealTypeId)]
+	    
+	    return {
+	        'favorite': food['isFavorite'],
+	        'timestamp': food['logDate'],
+	        'amount': food['loggedFood']['amount'],
+	        'brand': food['loggedFood']['brand'],
+	        'calories': food['loggedFood']['calories'],
+	        'mealTypeId': food['loggedFood']['mealTypeId'],
+	        'meal': meal,
+	        'name': food['loggedFood']['name'],
+	        'unit': food['loggedFood']['unit']['name'],
+			'total_calories': food['nutritionalValues']['calories'] if 'nutritionalValues' in food else 0,
+	        'carbs': food['nutritionalValues']['carbs'] if 'nutritionalValues' in food else 0,
+	        'fat': food['nutritionalValues']['fat'] if 'nutritionalValues' in food else 0,
+	        'fiber': food['nutritionalValues']['fiber'] if 'nutritionalValues' in food else 0,
+	        'protein': food['nutritionalValues']['protein'] if 'nutritionalValues' in food else 0,
+	        'sodium': food['nutritionalValues']['sodium'] if 'nutritionalValues' in food else 0
+	    }
+
+	def fitbit_foods(self, dates):
+	    """ fetches the food records for a list of dates
+	    and returns a Pandas DataFrame with 
+	    a food record for each logged food 
+	    
+	    dates -- list of date strings in the format %Y-%m-%d
+	    """
+	    
+	    f = fitbit.FitBit()
+	    token = 'oauth_token_secret=%s&oauth_token=%s' % \
+	        (settings['fitbit_access_secret'], settings['fitbit_access_key'])
+	    
+	    records = []
+	    for date in dates:
+	        foods = f.ApiCall(token, apiCall='/1/user/-/foods/log/date/%s.json' % date)
+	        records.append(foods)        
+
+	    foods = [[self.flatten_food(food) for food in json.loads(record)['foods']] for record in records]
+	    food_records = list(itertools.chain(*foods))
+	    return pd.DataFrame(food_records)
+
+
+	def insert_fitbit_food_records(self, records):
+	    """ inserts a collection of Fitbit resource
+	    records into the database
+
+	    records -- dictionary of Fitbt food records
+	    """
+	    # maybe another cursor here?
+	    for row in records:
+	        values = (
+	            row['amount'], row['brand'], row['calories'], 
+	            row['carbs'], row['fat'], row['favorite'],
+	            row['fiber'], row['meal'], row['mealTypeId'], 
+	            row['name'], row['protein'], row['sodium'], 
+	            row['timestamp'], row['total_calories'], row['unit']
+	        ) 
+	        sql = """INSERT INTO fitbit_food 
+	                (amount, brand, calories, 
+	                carbs, fat, favorite, fiber, 
+	                meal, meal_type_id, name, protein, 
+	                sodium, timestamp, total_calories, unit) 
+	                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 
+	                %s, %s, %s, %s, %s, %s, %s)"""
+	        self.cursor.execute(sql, values)
+	        self.conn.commit()
+
+
+	def foods_processor(collectionType, date):
+		""" takes an update record from the FitBit
+			subscription post, deletes the records
+			for the date of update for resources 
+			of the given type, fetches the given 
+			resource for the given day from the 
+			FitBit api and then inserts the resulting
+			records into the db
+
+			update -- an update dict from the FitBit Api
+
+		"""
+		# delete the food records for the given date
+		print "deleting food record for date %s " % date
+		self.delete_fitbit_records('fitbit_food', [date])
+		# create the food records for the given date
+		print "fetching records for date %s " % date
+		food_records = self.fitbit_foods([date]).to_dict(outtype='records')
+		# insert the new records
+		print "inserting new records for date %s " % date
+		self.insert_fitbit_food_records(food_records)
+
+
+
+
+
 
 def delete_fitbit_records(table, dates):
     for date in dates:
         sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
         cursor.execute(sql)
-        conn.commit()        
+        conn.commit()
 
 ###### FLATTEN FITBIT API RESPONSES ######
 
@@ -84,6 +204,8 @@ def flatten_activity(activity):
     activity['distance'] = activity['distances'][0]['distance']
     del activity['distances']
     return activity
+
+
 
 #### FETCH FITBIT RESOURCES ####
 
@@ -154,6 +276,8 @@ def fitbit_foods(dates):
     foods = [[flatten_food(food) for food in json.loads(record)['foods']] for record in records]
     food_records = list(itertools.chain(*foods))
     return pd.DataFrame(food_records)
+
+
 
 
 #### INSERTS FLAT FITBIT RECORDS INTO DB ####
@@ -262,9 +386,6 @@ def sleep_processor(update):
 	# insert the new records
 	print "inserting new records for date %s " % update['date']
 	insert_fitbit_sleep_records(sleep_records)
-	# set the update notification records to 'used'
-	print "removing update notification record"
-	db.fitbit_test.remove({'_id': update['_id']})
 
     
 def activities_processor(update):
@@ -288,9 +409,6 @@ def activities_processor(update):
 	# insert the new records
 	print "inserting new records for date %s " % update['date']
 	insert_fitbit_activity_records(activity_records)
-	# set the update notification records to 'used'
-	print "removing update notification record"
-	db.fitbit_test.remove({'_id': update['_id']})
 
 
 def foods_processor(collectionType, date):
@@ -315,9 +433,6 @@ def foods_processor(collectionType, date):
 	# insert the new records
 	print "inserting new records for date %s " % date
 	insert_fitbit_food_records(food_records)
-	# set the update notification records to 'used'
-	# print "removing update notification record"
-	# db.fitbit_test.remove({'_id': update['_id']})
 
 
 ##### CELERY TASKS #####
@@ -327,11 +442,7 @@ def add(x, y):
 
 @celery.task
 def celtest(collectionType, date):
-    conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-    conn = psycopg2.connect(conn_string)
-    cursor = conn.cursor()
     foods_processor(collectionType, date)
-    conn.close()
     return "%s, %s" % (collectionType, date)
 
 @celery.task
