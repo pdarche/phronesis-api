@@ -370,7 +370,7 @@ def activities_processor(update):
 	db.fitbit_test.remove({'_id': update['_id']})
 
 
-def foods_processor(update):
+def foods_processor(collectionType, date):
 	""" takes an update record from the FitBit
 		subscription post, deletes the records
 		for the date of update for resources 
@@ -383,17 +383,17 @@ def foods_processor(update):
 
 	"""	
 	# delete the food records for the given date
-	print "deleting food record for date %s " % update['date']
-	delete_fitbit_records('fitbit_food', [update['date']])
+	print "deleting food record for date %s " % date
+	delete_fitbit_records('fitbit_food', [date]])
 	# create the food records for the given date
-	print "fetching records for date %s " % update['date']
-	food_records = fitbit_foods([update['date']]).to_dict(outtype='records')
+	print "fetching records for date %s " % date
+	food_records = fitbit_foods([date]).to_dict(outtype='records')
 	# insert the new records
-	print "inserting new records for date %s " % update['date']
+	print "inserting new records for date %s " % date
 	insert_fitbit_food_records(food_records)
 	# set the update notification records to 'used'
-	print "removing update notification record"
-	db.fitbit_test.remove({'_id': update['_id']})
+	# print "removing update notification record"
+	# db.fitbit_test.remove({'_id': update['_id']})
 
 
 ##### CELERY TASKS #####
