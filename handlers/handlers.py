@@ -16,6 +16,7 @@ from models.user import User
 import mixins.mixins as mixins
 
 from tasks.tasks import add
+from tasks.tasks import celtest
 # from tasks.tasks import import_fitbit
 
 client = MongoClient('localhost', 27017)
@@ -80,19 +81,19 @@ class FitbitSubscribeHandler(BaseHandler):
 		files = self.request.files
 		for update in files['updates']:
 			for body in json.loads(update['body']):
-				# db.fitbit_test.insert(body)
-				add.delay(4,4)
+				db.fitbit_test.insert(body)
+				celtest.delay("super tacos!!!!!")
 		
 		self.set_status(204)
 
 
-class FitbitFetchResource():
-	def get(self):
-		paths = {
-			"sleep": ,
-			"activities": ,
-			"foods":
-		}
+#class FitbitFetchResource():
+#	def get(self):
+#		paths = {
+#			"sleep": ,
+#			"activities": ,
+#			"foods":
+#		}
 
 
 class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin): 

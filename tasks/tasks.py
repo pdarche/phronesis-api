@@ -399,6 +399,11 @@ def foods_processor(update):
 def add(x, y):
     return x + y
 
+@celery.task
+def celtest(test_string):
+    db.celtest.insert({"test": test_string)
+    return "success"
+
 
 @celery.task
 def fetch_fitbit(resources):
