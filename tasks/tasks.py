@@ -384,7 +384,7 @@ def foods_processor(collectionType, date):
 	"""	
 	# delete the food records for the given date
 	print "deleting food record for date %s " % date
-	delete_fitbit_records('fitbit_food', [date]])
+	delete_fitbit_records('fitbit_food', [date])
 	# create the food records for the given date
 	print "fetching records for date %s " % date
 	food_records = fitbit_foods([date]).to_dict(outtype='records')
@@ -403,6 +403,7 @@ def add(x, y):
 
 @celery.task
 def celtest(collectionType, date):
+    foods_processor(collectionType, date)
     return "%s, %s" % (collectionType, date)
 
 @celery.task
