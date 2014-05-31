@@ -324,18 +324,18 @@ def sleep_processor(update):
 		update -- an update dict from the FitBit Api
 
 	"""
-    # delete the sleep records for the given date
-    print "deleting record for date %s " % update['date']
-    delete_fitbit_records('fitbit_sleep', [update['date']])
-    # create the food records for the given date
-    print "fetching records for date %s " % update['date']
-    sleep_records = fitbit_sleeps([update['date']]).to_dict(outtype='records')
-    # insert the new records
-    print "inserting new records for date %s " % update['date']
-    insert_fitbit_sleep_records(sleep_records)
-    # set the update notification records to 'used'
-    print "removing update notification record"
-    db.fitbit_test.remove({'_id': update['_id']})
+	# delete the sleep records for the given date
+	print "deleting record for date %s " % update['date']
+	delete_fitbit_records('fitbit_sleep', [update['date']])
+	# create the food records for the given date
+	print "fetching records for date %s " % update['date']
+	sleep_records = fitbit_sleeps([update['date']]).to_dict(outtype='records')
+	# insert the new records
+	print "inserting new records for date %s " % update['date']
+	insert_fitbit_sleep_records(sleep_records)
+	# set the update notification records to 'used'
+	print "removing update notification record"
+	db.fitbit_test.remove({'_id': update['_id']})
 
     
 def activities_processor(update):
@@ -350,18 +350,18 @@ def activities_processor(update):
 		update -- an update dict from the FitBit Api
 
 	"""	
-    # delete the activity records for the given date
-    print "deleting activity record for date %s " % update['date']
-    delete_fitbit_records('fitbit_activity', [update['date']])
-    # create the food records for the given date
-    print "fetching records for date %s " % update['date']
-    activity_records = fitbit_activities([update['date']]).to_dict(outtype='records')
-    # insert the new records
-    print "inserting new records for date %s " % update['date']
-    insert_fitbit_activity_records(activity_records)
-    # set the update notification records to 'used'
-    print "removing update notification record"
-    db.fitbit_test.remove({'_id': update['_id']})
+	# delete the activity records for the given date
+	print "deleting activity record for date %s " % update['date']
+	delete_fitbit_records('fitbit_activity', [update['date']])
+	# create the food records for the given date
+	print "fetching records for date %s " % update['date']
+	activity_records = fitbit_activities([update['date']]).to_dict(outtype='records')
+	# insert the new records
+	print "inserting new records for date %s " % update['date']
+	insert_fitbit_activity_records(activity_records)
+	# set the update notification records to 'used'
+	print "removing update notification record"
+	db.fitbit_test.remove({'_id': update['_id']})
 
 
 def foods_processor(update):
@@ -376,18 +376,18 @@ def foods_processor(update):
 		update -- an update dict from the FitBit Api
 
 	"""	
-    # delete the food records for the given date
-    print "deleting food record for date %s " % update['date']
-    delete_fitbit_records('fitbit_food', [update['date']])
-    # create the food records for the given date
-    print "fetching records for date %s " % update['date']
-    food_records = fitbit_foods([update['date']]).to_dict(outtype='records')
-    # insert the new records
-    print "inserting new records for date %s " % update['date']
-    insert_fitbit_food_records(food_records)
-    # set the update notification records to 'used'
-    print "removing update notification record"
-    db.fitbit_test.remove({'_id': update['_id']})
+	# delete the food records for the given date
+	print "deleting food record for date %s " % update['date']
+	delete_fitbit_records('fitbit_food', [update['date']])
+	# create the food records for the given date
+	print "fetching records for date %s " % update['date']
+	food_records = fitbit_foods([update['date']]).to_dict(outtype='records')
+	# insert the new records
+	print "inserting new records for date %s " % update['date']
+	insert_fitbit_food_records(food_records)
+	# set the update notification records to 'used'
+	print "removing update notification record"
+	db.fitbit_test.remove({'_id': update['_id']})
 
 
 ##### CELERY TASKS #####
@@ -403,7 +403,6 @@ def add(x, y):
 def celtest(test_string):
     db.celtest.insert({"test": test_string)
     return "success"
-
 
 @celery.task
 def fetch_fitbit(resources):
