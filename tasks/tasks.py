@@ -229,6 +229,11 @@ def fitbit_foods(dates):
 #### INSERTS FLAT FITBIT RECORDS INTO DB ####
 
 def insert_fitbit_activity_records(records):
+    """ inserts a collection of FitBit resource
+    records into the database
+
+    records -- dictionary of Fitbt activity records
+    """
     for row in records:
         values = (
             row['activeScore'], row['activityCalories'], 
@@ -253,6 +258,11 @@ def insert_fitbit_activity_records(records):
 
 
 def insert_fitbit_food_records(records):
+    """ inserts a collection of Fitbit resource
+    records into the database
+
+    records -- dictionary of Fitbt food records
+    """
     for row in records:
         values = (
             row['amount'], row['brand'], row['calories'], 
@@ -273,6 +283,11 @@ def insert_fitbit_food_records(records):
 
 
 def insert_fitbit_sleep_records(records):
+    """ inserts a collection of FitBit resource
+    records into the database
+
+    records -- dictionary of Fitbt sleep records
+    """	
     for row in records:
         values = (
             row['awakeCount'], row['awakeDuration'], 
