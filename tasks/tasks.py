@@ -403,7 +403,7 @@ def add(x, y):
 
 @celery.task
 def celtest(collectionType, date):
-    return "%s, %s" (collectionType, date)
+    return "%s, %s" % (collectionType, date)
 
 @celery.task
 def fetch_fitbit(resources):
