@@ -442,7 +442,7 @@ def add(x, y):
 
 @celery.task
 def celtest(collectionType, date):
-    foods_processor(collectionType, date)
+    ff = FitbitFetchFood(collectionType, date)
     return "%s, %s" % (collectionType, date)
 
 @celery.task
