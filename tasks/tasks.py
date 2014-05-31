@@ -27,9 +27,9 @@ celery = Celery('tasks', broker='amqp://guest@localhost//')
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
 
-conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-conn = psycopg2.connect(conn_string)
-cursor = conn.cursor()
+#conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
+#conn = psycopg2.connect(conn_string)
+#cursor = conn.cursor()
 
 # class FitbitRequest(tornado.web.RequestHandler, mixins.FitbitMixin):
 # 	@tornado.gen.engine
@@ -120,7 +120,7 @@ cursor = conn.cursor()
 def delete_fitbit_records(table, dates):
     for date in dates:
         sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
-        cursor.execute(sql, values)
+        cursor.execute(sql)
         conn.commit()        
 
 ###### FLATTEN FITBIT API RESPONSES ######
@@ -148,12 +148,12 @@ def flatten_food(food):
         'meal': meal,
         'name': food['loggedFood']['name'],
         'unit': food['loggedFood']['unit']['name'],
-        'total_calories': food['nutritionalValues']['calories'],
-        'carbs': food['nutritionalValues']['carbs'],
-        'fat': food['nutritionalValues']['fat'],
-        'fiber': food['nutritionalValues']['fiber'],
-        'protein': food['nutritionalValues']['protein'],
-        'sodium': food['nutritionalValues']['sodium']
+	'total_calories': food['nutritionalValues']['calories'] if 'nutritionalValues' in food else 0,
+        'carbs': food['nutritionalValues']['carbs'] if 'nutritionalValues' in food else 0,
+        'fat': food['nutritionalValues']['fat'] if 'nutritionalValues' in food else 0,
+        'fiber': food['nutritionalValues']['fiber'] if 'nutritionalValues' in food else 0,
+        'protein': food['nutritionalValues']['protein'] if 'nutritionalValues' in food else 0,
+        'sodium': food['nutritionalValues']['sodium'] if 'nutritionalValues' in food else 0
     }
 
 def flatten_sleep(sleep):
@@ -293,7 +293,6 @@ def insert_fitbit_food_records(records):
         cursor.execute(sql, values)
         conn.commit()
 
-
 def insert_fitbit_sleep_records(records):
     """ inserts a collection of FitBit resource
     records into the database
@@ -387,7 +386,8 @@ def foods_processor(collectionType, date):
 
 		update -- an update dict from the FitBit Api
 
-	"""	
+	"""
+	cursor = conn.cursor()	
 	# delete the food records for the given date
 	print "deleting food record for date %s " % date
 	delete_fitbit_records('fitbit_food', [date])
@@ -409,7 +409,11 @@ def add(x, y):
 
 @celery.task
 def celtest(collectionType, date):
+    conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
+    conn = psycopg2.connect(conn_string)
+    cursor = conn.cursor()
     foods_processor(collectionType, date)
+    conn.close()
     return "%s, %s" % (collectionType, date)
 
 @celery.task
