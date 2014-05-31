@@ -117,6 +117,12 @@ cursor = conn.cursor()
 # 	return doc
 
 
+def delete_fitbit_records(table, dates):
+    for date in dates:
+        sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
+        cursor.execute(sql, values)
+        conn.commit()        
+
 ###### FLATTEN FITBIT API RESPONSES ######
 
 mealTypeMapping = {
