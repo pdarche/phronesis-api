@@ -18,12 +18,18 @@ import fitbit
 import time
 import pandas as pd
 import itertools
+
+import psycopg2
 # import copy
 
 celery = Celery('tasks', broker='amqp://guest@localhost//')
 
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
+
+conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
+conn = psycopg2.connect(conn_string)
+cursor = conn.cursor()
 
 # class FitbitRequest(tornado.web.RequestHandler, mixins.FitbitMixin):
 # 	@tornado.gen.engine
@@ -397,7 +403,7 @@ def add(x, y):
 
 @celery.task
 def celtest(test_string):
-    db.celtest.insert({"test": test_string)
+    db.celerytest.insert({"test": test_string})
     return "success"
 
 @celery.task

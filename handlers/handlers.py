@@ -82,7 +82,8 @@ class FitbitSubscribeHandler(BaseHandler):
 		for update in files['updates']:
 			for body in json.loads(update['body']):
 				db.fitbit_test.insert(body)
-				celtest.delay("super tacos!!!!!")
+				celtest.delay('tacoooooos!!!!')
+				#celtest.delay("super tacos!!!!!")
 		
 		self.set_status(204)
 
