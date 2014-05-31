@@ -659,26 +659,35 @@ class FitbitFetchActivities():
 # 	insert_fitbit_food_records(food_records)
 
 
-# ##### CELERY TASKS #####
-# @celery.task
-# def add(x, y):
-#     return x + y
+##### CELERY TASKS #####
+@celery.task
+def add(x, y):
+    return x + y
 
-# @celery.task
-# def celtest(collectionType, date):
-#     ff = FitbitFetchFood(collectionType, date)
-#     return "%s, %s" % (collectionType, date)
+@celery.task
+def celtest(collectionType, date):
+    if collectionType == 'foods':
+		FitbitFetchFood(collectionType, date)
 
-# @celery.task
-# def fetch_fitbit(resources):
-# 	for resource in resources:
-# 	    if resource['collectionType'] == 'foods':
-# 	        foods_processor(p)
-# 	    elif resource['collectionType'] == 'activities':
-# 	        activities_processor(p)
-# 	    elif resource['collectionType'] == 'sleep':
-# 	        sleep_processor(p)
-# 	    time.sleep(.25)
+    elif collectionType == 'activities':
+        FitbitFetchActivities(collectionType, date)
+
+    elif collectionType == 'sleep':
+        FitbitFetchSleep(collectionType, date)
+	
+	time.sleep(.25)
+    return "%s, %s" % (collectionType, date)
+
+@celery.task
+def fetch_fitbit(resources):
+	for resource in resources:
+	    if resource['collectionType'] == 'foods':
+	        foods_processor(p)
+	    elif resource['collectionType'] == 'activities':
+	        activities_processor(p)
+	    elif resource['collectionType'] == 'sleep':
+	        sleep_processor(p)
+	    time.sleep(.25)
 
 
 # @celery.task
