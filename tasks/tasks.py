@@ -27,6 +27,10 @@ celery = Celery('tasks', broker='amqp://guest@localhost//')
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
 
+
+global conn_string
+global conn
+global cursor
 # conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
 # conn = psycopg2.connect(conn_string)
 # cursor = conn.cursor()
@@ -323,9 +327,9 @@ def add(x, y):
 
 @celery.task
 def celtest(collectionType, date):
-    global conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-    global conn = psycopg2.connect(conn_string)
-    global cursor = conn.cursor()
+    conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
+    conn = psycopg2.connect(conn_string)
+    cursor = conn.cursor()
     foods_processor(collectionType, date)
     conn.close()
     return "%s, %s" % (collectionType, date)
