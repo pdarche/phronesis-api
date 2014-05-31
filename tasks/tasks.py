@@ -27,95 +27,9 @@ celery = Celery('tasks', broker='amqp://guest@localhost//')
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
 
-#conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-#conn = psycopg2.connect(conn_string)
-#cursor = conn.cursor()
-
-# class FitbitRequest(tornado.web.RequestHandler, mixins.FitbitMixin):
-# 	@tornado.gen.engine
-# 	def import_data(self, fitbit):
-# 		user_id = fitbit["username"]
-# 		access_token = fitbit["access_token"]
-# 		member_since = fitbit["user"]["memberSince"]
-# 		activities = []
-# 		fitbit_features = [
-# 			'activities/steps', 'activities/calories', 
-# 			'activities/distance', 'activities/floors',
-# 			'activities/elevation', 'activities/minutesSedentary', 
-# 			'activities/minutesLightlyActive', 'activities/minutesFairlyActive',
-# 			'activities/minutesVeryActive', 'sleep/startTime',
-# 			'sleep/timeInBed', 'sleep/minutesAsleep',
-# 			'sleep/awakeningsCount', 'sleep/minutesAwake',
-# 			'sleep/minutesToFallAsleep', 'sleep/minutesAfterWakeup',
-# 			'sleep/efficiency', 'body/weight', 'body/bmi',
-# 			'body/fat', 'body/fat', 
-# 		]
-
-		# for feature in fitbit_features:
-		# response = yield tornado.gen.Task(
-		# 	self.fitbit_request,
-		# 	'/user/-/activities/steps/date/2011-01-01/today',
-		# 	access_token = access_token,
-		# 	user_id = user_id
-		# )
-		# activities.append(respones)
-		
-
-# def fetch_resource(f, user_id, resource):
-# 	res = f.time_series(
-# 		resource,
-# 		user_id=user_id, 
-# 		base_date="2010-12-01",
-# 		end_date="today"
-# 	)
-# 	key = resource.replace("/", "-")
-# 	time.sleep(.1)
-# 	return res[key]
-
-
-# def daily_activity(tup):
-# 	doc = copy.deepcopy(FitbitActivity)
-# 	doc['date'] = tup[0]['dateTime']
-# 	doc['steps'] = tup[0]['value']
-# 	doc['calories'] = tup[1]['value']
-# 	doc['distance'] = tup[2]['value']
-# 	doc['floors'] = tup[3]['value']
-# 	doc['elevation'] = tup[4]['value']
-# 	doc['minutesSedentary'] = tup[5]['value']
-# 	doc['minutesLightlyActive'] = tup[6]['value']
-# 	doc['minutesFairlyActive'] = tup[7]['value']
-# 	doc['minutesVeryActive'] = tup[8]['value'] 
-# 	return doc
-
-
-# def daily_sleep(tup):
-# 	doc = copy.deepcopy(FitbitSleep)
-# 	doc['date'] = tup[0]['dateTime']
-# 	doc['startTime'] = tup[0]['value']
-# 	doc['timeInBed'] = tup[1]['value']
-# 	doc['minutesAsleep'] = tup[2]['value']
-# 	doc['awakeningsCount'] = tup[3]['value']
-# 	doc['minutesAwake'] = tup[4]['value']
-# 	doc['minutesToFallAsleep'] = tup[5]['value']
-# 	doc['minutesAfterWakeup'] = tup[6]['value']
-# 	doc['efficiency'] = tup[7]['value']
-# 	return doc
-
-# def daily_body(tup):
-# 	doc = copy.deepcopy(FitbitBody)
-# 	doc['date'] = tup[0]['dateTime']
-# 	doc['weight'] = tup[0]['value']
-# 	doc['bmi'] = tup[1]['value']
-# 	doc['fat'] = tup[2]['value']
-# 	return doc
-
-# def daily_food(tup):
-# 	doc = copy.deepcopy(FitbitFood)
-# 	doc['date'] = tup[0]['dateTime']
-# 	doc['caloriesIn]'] = tup[0]['value']
-# 	doc['water'] = tup[1]['value']
-# 	return doc
-
+# conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
+# conn = psycopg2.connect(conn_string)
+# cursor = conn.cursor()
 
 def delete_fitbit_records(table, dates):
     for date in dates:
@@ -409,9 +323,9 @@ def add(x, y):
 
 @celery.task
 def celtest(collectionType, date):
-    conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-    conn = psycopg2.connect(conn_string)
-    cursor = conn.cursor()
+    global conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
+    global conn = psycopg2.connect(conn_string)
+    global cursor = conn.cursor()
     foods_processor(collectionType, date)
     conn.close()
     return "%s, %s" % (collectionType, date)
