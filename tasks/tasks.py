@@ -32,12 +32,12 @@ db = client.phronesis_dev
 # cursor = conn.cursor()
 
 class FitbitFetchFood():
-	__init__(self, collectionType, date):
+	def __init__(self, collectionType, date):
 		self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-		self.conn = psycopg2.connect(conn_string)
-		self.cursor = conn.cursor()
+		self.conn = psycopg2.connect(self.conn_string)
+		self.cursor = self.conn.cursor()
 		self.collectionType = collectionType
-		self.date = dates
+		self.date = date
 		self.mealTypeMapping = {
 		    "1": "breakfast",
 		    "2": "morning snack",
@@ -128,7 +128,7 @@ class FitbitFetchFood():
 	        self.conn.commit()
 
 
-	def foods_processor(collectionType, date):
+	def foods_processor(self, collectionType, date):
 		""" takes an update record from the FitBit
 			subscription post, deletes the records
 			for the date of update for resources 
