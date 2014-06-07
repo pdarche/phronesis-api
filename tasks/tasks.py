@@ -14,7 +14,7 @@ import itertools
 
 celery = Celery('tasks', broker='amqp://guest@localhost//')
 
-class FitbitFetchResource():
+class FitbitFetchResource(object):
 	def __init__(self):
 		# self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
 		self.conn_string = "host='localhost' dbname='pete' user='postgres' password='Morgortbort1!'"
@@ -23,24 +23,43 @@ class FitbitFetchResource():
 
 	def delete_fitbit_records(self, table, dates):
 	    for date in dates:
-	        sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
-	        self.cursor.execute(sql)
-	        self.conn.commit()
+			try:
+				sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
+				self.cursor.execute(sql)
+				self.conn.commit()
+			except:
+				# REFACTOR: this should be logged
+				pass
 
-	def find_latest_record_date(self, table):
-		# sql = "SELECT timestamp::date FROM %s ORDER BY timestamp::date DESC LIMIT 1" % table
-		sql = 'SELECT * FROM fitbit_food'
-		records = self.cursor.execute(sql)
-		self.conn.commit()
+	def find_first_record_date(self, table):
+		""" finds the date of the last record for a user.
+			for a given table.  If no record is found returns
+			the current date
 
-		# if records is None:
-		# 	return datetime.datetime.now().strftime('%Y-%m-%d')
-		# else:
-		# 	return records
-		
+			table -- resource table name string
+		"""
+		try: 
+			sql = """SELECT timestamp::date FROM %s 
+						ORDER BY timestamp::date LIMIT 1""" % table
+			self.cursor.execute(sql)			
+			last_record_date = self.cursor.fetchone()
 
-class FitbitFetchFood():
-	def __init__(self, dates):
+			if last_record_date is None:
+				return datetime.datetime.now()
+			else:
+				return last_record_date[0]
+
+		except Exception, e:
+			print e
+
+	def date_range(self, base_date, num_days):
+		return [(base_date - datetime.timedelta(days=x)).strftime('%Y-%m-%d') \
+					for x in range(0, num_days)]
+
+
+class FitbitFetchFood(FitbitFetchResource):
+	def __init__(self):
+		super(FitbitFetchFood, self).__init__()
 		self.mealTypeMapping = {
 		    "1": "breakfast",
 		    "2": "morning snack",
@@ -87,7 +106,8 @@ class FitbitFetchFood():
 	    records = []
 	    for date in dates:
 	        foods = f.ApiCall(token, apiCall='/1/user/-/foods/log/date/%s.json' % date)
-	        records.append(foods)        
+	        records.append(foods)
+	        time.sleep(.01)
 
 	    foods = [[self.flatten_food(food) for food in json.loads(record)['foods']] for record in records]
 	    food_records = list(itertools.chain(*foods))
@@ -118,7 +138,7 @@ class FitbitFetchFood():
 	        self.cursor.execute(sql, values)
 	        self.conn.commit()
 
-	def foods_processor(self, date):
+	def foods_processor(self, dates):
 		""" takes an update record from the FitBit
 			subscription post, deletes the records
 			for the date of update for resources 
@@ -131,12 +151,18 @@ class FitbitFetchFood():
 
 		"""
 		# delete the food records for the given date
-		self.delete_fitbit_records('fitbit_food', self.dates)
+		self.delete_fitbit_records('fitbit_food', dates)
 		# create the food records for the given date
-		food_records = self.fitbit_foods(self.dates).to_dict(outtype='records')
+		food_records = self.fitbit_foods(dates).to_dict(outtype='records')
 		# insert the new records
 		self.insert_fitbit_food_records(food_records)
 
+
+f = FitbitFetchFood()
+base_date = f.find_first_record_date('fitbit_food')
+dates = f.date_range(base_date, 30)
+f.foods_processor(dates)
+print "done"
 
 class FitbitFetchSleep():
 	def __init__(self, collectionType, date):
@@ -150,7 +176,6 @@ class FitbitFetchSleep():
 		self.conn.close()
 
 	def delete_fitbit_records(self, table, dates):
-	    # maybe put another cursor here?
 	    for date in dates:
 	        sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
 	        self.cursor.execute(sql)
