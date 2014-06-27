@@ -15,8 +15,17 @@ from tornado.options import options
 import tornado.web
 #import tornado.wsgi
 
+from tasks.tasks import add
+from tasks.tasks import celtest
+from tasks.tasks import import_fitbit
+
 from settings import settings
 from urls import url_patterns
+
+
+def tacos():
+	print "trying to fetch"
+	import_fitbit(25)
 
 
 class TornadoApplication(tornado.web.Application):
@@ -28,6 +37,7 @@ def main():
     app = TornadoApplication()
     http_server = tornado.httpserver.HTTPServer(app)
     http_server.listen(options.port)
+    tornado.ioloop.PeriodicCallback(tacos, 180000).start()
     tornado.ioloop.IOLoop.instance().start()
 
 

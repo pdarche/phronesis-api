@@ -107,6 +107,7 @@ class FitbitFetchFood(FitbitFetchResource):
 	    for date in dates:
 	        foods = f.ApiCall(token, apiCall='/1/user/-/foods/log/date/%s.json' % date)
 	        records.append(foods)
+	        print "fetching date %s" % date 
 	        time.sleep(.01)
 
 	    foods = [[self.flatten_food(food) for food in json.loads(record)['foods']] for record in records]
@@ -157,12 +158,6 @@ class FitbitFetchFood(FitbitFetchResource):
 		# insert the new records
 		self.insert_fitbit_food_records(food_records)
 
-
-f = FitbitFetchFood()
-base_date = f.find_first_record_date('fitbit_food')
-dates = f.date_range(base_date, 30)
-f.foods_processor(dates)
-print "done"
 
 class FitbitFetchSleep():
 	def __init__(self, collectionType, date):
@@ -370,22 +365,38 @@ def add(x, y):
 
 @celery.task
 def celtest(collectionType, date):
-    if collectionType == 'foods':
+	if collectionType == 'foods':
 		FitbitFetchFood(collectionType, date)
 
-    elif collectionType == 'activities':
-        FitbitFetchActivities(collectionType, date)
+	elif collectionType == 'activities':
+		FitbitFetchActivities(collectionType, date)
 
-    elif collectionType == 'sleep':
-        FitbitFetchSleep(collectionType, date)
-	
+	elif collectionType == 'sleep':
+		FitbitFetchSleep(collectionType, date)
+
 	time.sleep(.25)
-    return "%s, %s" % (collectionType, date)
+	return "%s, %s" % (collectionType, date)
 
 
 @celery.task
-def import_fitbit(dates):
-	fb_resource = FitbitFetchFood(dates)
+def import_fitbit(offset):
+	f = FitbitFetchResource()
+	base_date = f.find_first_record_date('fitbit_food')
+	dates = f.date_range(base_date, offset)
+
+	# if collectionType == 'foods':
+	foods = FitbitFetchFood()
+	foods.foods_processor(dates)
+
+	# elif collectionType == 'activities':
+	# FitbitFetchActivities('activities', dates)
+
+	# elif collectionType == 'sleep':
+	# FitbitFetchSleep('sleep', dates)
+
+	time.sleep(.25)
+	return "success!"	
+
 
 
 # @celery.task
