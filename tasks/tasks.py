@@ -115,14 +115,17 @@ class FitbitFetchFood(FitbitFetchResource):
 	    
 	    records = []
 	    for date in dates:
-	    	print "fetching date %s" % date 
-	        foods = f.ApiCall(token, apiCall='/1/user/-/foods/log/date/%s.json' % date)
-	        foods_dict = json.loads(foods)['foods']
-	        if len(foods_dict) > 0:
-	        	records.append(foods_dict)
-	        else:
-	        	records.append([date])
-	        time.sleep(.01)
+			print "fetching date %s" % date
+			try:
+				foods = f.ApiCall(token, apiCall='/1/user/-/foods/log/date/%s.json' % date)
+				foods_dict = json.loads(foods)['foods']
+				if len(foods_dict) > 0:
+					records.append(foods_dict)
+				else:
+					records.append([date])
+			except:
+				notify_pete('fitbit food error')
+			time.sleep(.01)
 
 	    foods = [[self.flatten_food(food) for food in record] for record in records]
 	    food_records = list(itertools.chain(*foods))
@@ -422,35 +425,40 @@ def import_fitbit(offset):
 		foods = FitbitFetchFood()
 		foods.foods_processor(food_dates)
 	else:
-		notify_pete('foods')
+		notify_pete('Fitbit food import complete')
 
 	if pd.to_datetime(base_date_activity) > signup_date:
 		print "fetching activities!"
 		activities = FitbitFetchActivities()
 		activities.activities_processor(activity_dates)
 	else:	
-		notify_pete('activities')
+		notify_pete('Fitbit activities import complete')
 
 	if pd.to_datetime(base_date_sleep) > signup_date:
 		print "fetching sleeps!"
 		sleep = FitbitFetchSleep()
 		sleep.sleep_processor(sleep_dates)
 	else:
-		notify_pete('sleep')
+		notify_pete('Fitbit sleep import complete')
 
 	time.sleep(.25)
 	return "success!"	
 
 
-def notify_pete(collectionType):
+def notify_pete(notification):
 	return requests.post(
 		settings['mailgun_post_url'],
 		auth=("api", settings['mailgun_api_key']),
 		data={"from": "Pete <pdarche@gmail.com>",
 			"to": ["pdarche@gmail.com"],
-			"subject": "Fitbit %s import complete",
-			"text": "Fitbit %s import complete"}) % (collectionType, collectionType)
+			"subject": "%s" % notification,
+			"text": "%s"  % notification})
 
 
-# import_fitbit(5)
+def test(date, offset):
+	foods = FitbitFetchFood()
+	dates = foods.date_range(date, offset)
+	foods.foods_processor(dates)
+
+test(pd.to_datetime('2014-06-28'), 2)
 
