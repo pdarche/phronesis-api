@@ -206,31 +206,35 @@ class FitbitFetchSleep(FitbitFetchResource):
 
 
 	def fitbit_sleeps(self, dates):
-	    """ fetches the sleep records for a list of dates
-	    and returns a Pandas DataFrame with 
-	    a food record for each logged food 
-	    
-	    dates -- list of date strings in the format %Y-%m-%d
-	    """
-	    
-	    f = fitbit.FitBit()
-	    token = 'oauth_token_secret=%s&oauth_token=%s' % \
-	        (settings['fitbit_access_secret'], settings['fitbit_access_key'])
-	    
-	    records = []
-	    for date in dates:
-	        print "fetching date %s" % date 
-	        sleeps = f.ApiCall(token, apiCall='/1/user/-/sleep/date/%s.json' % date)
-	        json_sleeps = json.loads(sleeps)
-	        sleeps_arr = json_sleeps['sleep'] if json_sleeps.has_key('sleep') else []
-	        if len(sleeps_arr) > 0:
-	        	records.append(sleeps_arr)
-	        else:
-	        	records.append([date])
-	        
-	    sleeps = [[self.flatten_sleep(sleep) for sleep in record] for record in records]
-	    sleep_records = list(itertools.chain(*sleeps))
-	    return pd.DataFrame(sleep_records)
+		""" fetches the sleep records for a list of dates
+		and returns a Pandas DataFrame with 
+		a food record for each logged food 
+
+		dates -- list of date strings in the format %Y-%m-%d
+		"""
+
+		f = fitbit.FitBit()
+		token = 'oauth_token_secret=%s&oauth_token=%s' % \
+			(settings['fitbit_access_secret'], settings['fitbit_access_key'])
+
+		records = []
+		for date in dates:
+			print "fetching date %s" % date
+			try:
+				sleeps = f.ApiCall(token, apiCall='/1/user/-/sleep/date/%s.json' % date)
+				json_sleeps = json.loads(sleeps)
+				sleeps_arr = json_sleeps['sleep'] if json_sleeps.has_key('sleep') else []
+				if len(sleeps_arr) > 0:
+					records.append(sleeps_arr)
+				else:
+					records.append([date])
+			except:
+				notify_pete('fitbit sleep error')
+			time.sleep(.01)
+
+		sleeps = [[self.flatten_sleep(sleep) for sleep in record] for record in records]
+		sleep_records = list(itertools.chain(*sleeps))
+		return pd.DataFrame(sleep_records)
 
 	def insert_fitbit_sleep_records(self, records):
 	    """ inserts a collection of Fitbit resource
@@ -301,28 +305,32 @@ class FitbitFetchActivities(FitbitFetchResource):
 	    return activity
 
 	def fitbit_activities(self, dates):
-	    """ fetches the activity records for a list of dates
-	    and returns a Pandas DataFrame with 
-	    a food record for each logged food 
-	    
-	    dates -- list of date strings in the format %Y-%m-%d
-	    """
-	    
-	    f = fitbit.FitBit()
-	    token = 'oauth_token_secret=%s&oauth_token=%s' % \
-	        (settings['fitbit_access_secret'], settings['fitbit_access_key'])
-	    
-	    records = []
-	    for date in dates:
-	    	print "fetching date %s" % date
-	        activities = f.ApiCall(token, apiCall='/1/user/-/activities/date/%s.json' % date)
-	        activities = json.loads(activities)
-	        activities['summary']['timestamp'] = pd.to_datetime(date)	        
-	        records.append(activities['summary'])
-	        
-	    activities = [self.flatten_activity(activity) for activity in records]
-	    return pd.DataFrame(activities)
-	    
+		""" fetches the activity records for a list of dates
+		and returns a Pandas DataFrame with 
+		a food record for each logged food 
+
+		dates -- list of date strings in the format %Y-%m-%d
+		"""
+
+		f = fitbit.FitBit()
+		token = 'oauth_token_secret=%s&oauth_token=%s' % \
+		    (settings['fitbit_access_secret'], settings['fitbit_access_key'])
+
+		records = []
+		for date in dates:
+			print "fetching date %s" % date
+			try:
+				activities = f.ApiCall(token, apiCall='/1/user/-/activities/date/%s.json' % date)
+				activities = json.loads(activities)
+				activities['summary']['timestamp'] = pd.to_datetime(date)	        
+				records.append(activities['summary'])
+			except:
+				notify_pete('fitbit activities error')
+			time.sleep(.01)
+
+		activities = [self.flatten_activity(activity) for activity in records]
+		return pd.DataFrame(activities)
+
 
 	def insert_fitbit_activity_records(self, records):
 	    """ inserts a collection of FitBit resource
@@ -455,10 +463,9 @@ def notify_pete(notification):
 			"text": "%s"  % notification})
 
 
-def test(date, offset):
-	foods = FitbitFetchFood()
-	dates = foods.date_range(date, offset)
-	foods.foods_processor(dates)
+# def test(date, offset):
+# 	foods = FitbitFetchActivities()
+# 	dates = foods.date_range(date, offset)
+# 	foods.activities_processor(dates)
 
-test(pd.to_datetime('2014-06-28'), 2)
 
