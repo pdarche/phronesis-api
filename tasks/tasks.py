@@ -197,6 +197,7 @@ class FitbitFetchSleep(FitbitFetchResource):
 	    for date in dates:
 	        sleeps = f.ApiCall(token, apiCall='/1/user/-/sleep/date/%s.json' % date)
 	        # NOTE: the date should be added to the record here!
+	        print "fetching date %s" % date 
 	        records.append(sleeps)
 	        
 	    sleeps = [[self.flatten_sleep(sleep) for sleep in json.loads(record)['sleep']] \
@@ -380,7 +381,7 @@ def import_fitbit(offset):
 	user = json.loads(fb.ApiCall(token, apiCall='/1/user/-/profile.json'))
 	signup_date = pd.to_datetime(user['user']['memberSince'])
 
-	# Create the date ranges to fetch resources for 
+	# Create the date ranges of resources that will be fetched
 	f = FitbitFetchResource()
 	base_date_food = f.find_first_record_date('fitbit_food')
 	base_date_activity = f.find_first_record_date('fitbit_activity')
@@ -391,7 +392,7 @@ def import_fitbit(offset):
 	sleep_dates = f.date_range(base_date_sleep, offset)
 
 	# if the signupdate is creater than the 
-	# last 
+	# last fetch the resources in the date range
 	if pd.to_datetime(base_date_food) > signup_date:
 		print "fetching foods!"
 		foods = FitbitFetchFood()

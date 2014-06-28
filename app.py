@@ -25,7 +25,7 @@ from urls import url_patterns
 
 def update_fitbit():
 	print "trying to fetch"
-	import_fitbit.delay(25)
+	import_fitbit.delay(5)
 
 
 class TornadoApplication(tornado.web.Application):
