@@ -421,18 +421,21 @@ def import_fitbit(offset):
 		print "fetching foods!"
 		foods = FitbitFetchFood()
 		foods.foods_processor(food_dates)
+	else:
 		notify_pete('foods')
 
 	if pd.to_datetime(base_date_activity) > signup_date:
 		print "fetching activities!"
 		activities = FitbitFetchActivities()
 		activities.activities_processor(activity_dates)
+	else:	
 		notify_pete('activities')
 
 	if pd.to_datetime(base_date_sleep) > signup_date:
 		print "fetching sleeps!"
 		sleep = FitbitFetchSleep()
 		sleep.sleep_processor(sleep_dates)
+	else:
 		notify_pete('sleep')
 
 	time.sleep(.25)
