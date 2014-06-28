@@ -8,6 +8,7 @@ import json
 import fitbit
 import datetime
 import time
+import numpy as np
 import pandas as pd
 import itertools
 
@@ -70,26 +71,34 @@ class FitbitFetchFood(FitbitFetchResource):
 		}
 
 	def flatten_food(self, food):
-	    mealTypeId = food['loggedFood']['mealTypeId']
-	    meal = self.mealTypeMapping[str(mealTypeId)]
-	    
-	    return {
-	        'favorite': food['isFavorite'],
-	        'timestamp': food['logDate'],
-	        'amount': food['loggedFood']['amount'],
-	        'brand': food['loggedFood']['brand'],
-	        'calories': food['loggedFood']['calories'],
-	        'mealTypeId': food['loggedFood']['mealTypeId'],
-	        'meal': meal,
-	        'name': food['loggedFood']['name'],
-	        'unit': food['loggedFood']['unit']['name'],
-			'total_calories': food['nutritionalValues']['calories'] if 'nutritionalValues' in food else 0,
-	        'carbs': food['nutritionalValues']['carbs'] if 'nutritionalValues' in food else 0,
-	        'fat': food['nutritionalValues']['fat'] if 'nutritionalValues' in food else 0,
-	        'fiber': food['nutritionalValues']['fiber'] if 'nutritionalValues' in food else 0,
-	        'protein': food['nutritionalValues']['protein'] if 'nutritionalValues' in food else 0,
-	        'sodium': food['nutritionalValues']['sodium'] if 'nutritionalValues' in food else 0
-	    }
+		if type(food) == dict:
+			mealTypeId = food['loggedFood']['mealTypeId']
+			meal = self.mealTypeMapping[str(mealTypeId)]
+		    
+			return {
+			    'favorite': food['isFavorite'],
+			    'timestamp': food['logDate'],
+			    'amount': food['loggedFood']['amount'],
+			    'brand': food['loggedFood']['brand'],
+			    'calories': food['loggedFood']['calories'],
+			    'mealTypeId': food['loggedFood']['mealTypeId'],
+			    'meal': meal,
+			    'name': food['loggedFood']['name'],
+			    'unit': food['loggedFood']['unit']['name'],
+				'total_calories': food['nutritionalValues']['calories'] if 'nutritionalValues' in food else 0,
+			    'carbs': food['nutritionalValues']['carbs'] if 'nutritionalValues' in food else 0,
+			    'fat': food['nutritionalValues']['fat'] if 'nutritionalValues' in food else 0,
+			    'fiber': food['nutritionalValues']['fiber'] if 'nutritionalValues' in food else 0,
+			    'protein': food['nutritionalValues']['protein'] if 'nutritionalValues' in food else 0,
+			    'sodium': food['nutritionalValues']['sodium'] if 'nutritionalValues' in food else 0
+			}
+		else:
+			return {
+			    'favorite': None, 'timestamp': food, 'amount': 0,
+			    'brand': None, 'calories': 0,'mealTypeId': 0, 
+			    'meal': None,'name': None, 'unit': None, 'total_calories': 0,
+			    'carbs': 0, 'fat': 0, 'fiber':  0, 'protein': 0,'sodium':  0
+			}
 
 	def fitbit_foods(self, dates):
 	    """ fetches the food records for a list of dates
@@ -105,12 +114,16 @@ class FitbitFetchFood(FitbitFetchResource):
 	    
 	    records = []
 	    for date in dates:
+	    	print "fetching date %s" % date 
 	        foods = f.ApiCall(token, apiCall='/1/user/-/foods/log/date/%s.json' % date)
-	        records.append(foods)
-	        print "fetching date %s" % date 
+	        foods_dict = json.loads(foods)['foods']
+	        if len(foods_dict) > 0:
+	        	records.append(foods_dict)
+	        else:
+	        	records.append([date])
 	        time.sleep(.01)
 
-	    foods = [[self.flatten_food(food) for food in json.loads(record)['foods']] for record in records]
+	    foods = [[self.flatten_food(food) for food in record] for record in records]
 	    food_records = list(itertools.chain(*foods))
 	    return pd.DataFrame(food_records)
 
@@ -120,7 +133,6 @@ class FitbitFetchFood(FitbitFetchResource):
 
 	    records -- dictionary of Fitbt food records
 	    """
-	    # maybe another cursor here?
 	    for row in records:
 	        values = (
 	            row['amount'], row['brand'], row['calories'], 
@@ -138,6 +150,7 @@ class FitbitFetchFood(FitbitFetchResource):
 	                %s, %s, %s, %s, %s, %s, %s)"""
 	        self.cursor.execute(sql, values)
 	        self.conn.commit()
+
 
 	def foods_processor(self, dates):
 		""" takes an update record from the FitBit
@@ -157,29 +170,36 @@ class FitbitFetchFood(FitbitFetchResource):
 		food_records = self.fitbit_foods(dates).to_dict(outtype='records')
 		# insert the new records
 		self.insert_fitbit_food_records(food_records)
+		#close the connection
+		self.conn.close()
 
 
 class FitbitFetchSleep(FitbitFetchResource):
 	def __init__(self):
 		super(FitbitFetchSleep, self).__init__()
-		# self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-		# self.conn = psycopg2.connect(self.conn_string)
-		# self.cursor = self.conn.cursor()
 
-		# self.sleep_processor(collectionType, date)
-		# self.conn.close()
+	# def delete_fitbit_records(self, table, dates):
+	#     for date in dates:
+	#         sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
+	#         self.cursor.execute(sql)
+	#         self.conn.commit()
 
-	def delete_fitbit_records(self, table, dates):
-	    for date in dates:
-	        sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
-	        self.cursor.execute(sql)
-	        self.conn.commit()
+	def flatten_sleep(self, sleep):		
+		if type(sleep) == dict:			
+			sleep_rec = sleep
+			del sleep_rec['minuteData']
+			sleep_rec['startTime'] = pd.to_datetime(sleep_rec['startTime'])
+			sleep_rec['timestamp'] = pd.to_datetime(sleep_rec['startTime'])
+		else:
+			sleep_rec = {
+				'logId': None, 'isMainSleep': None, 'minutesToFallAsleep': None, 'awakeningsCount': None, 
+				'minutesAwake': None, 'timeInBed': None, 'minutesAsleep': None,
+				'awakeDuration': None, 'efficiency': None, 'startTime': pd.to_datetime(sleep),
+				'restlessCount': 11, 'duration': None, 'restlessDuration': None,
+				'awakeCount': None, 'minutesAfterWakeup': None, 'timestamp': pd.to_datetime(sleep)
+			}
+		return sleep_rec
 
-	def flatten_sleep(self, sleep):
-	    del sleep['minuteData']
-	    sleep['startTime'] = pd.to_datetime(sleep['startTime'])
-	    sleep['timestamp'] = pd.to_datetime(sleep['startTime'])
-	    return sleep
 
 	def fitbit_sleeps(self, dates):
 	    """ fetches the sleep records for a list of dates
@@ -195,13 +215,17 @@ class FitbitFetchSleep(FitbitFetchResource):
 	    
 	    records = []
 	    for date in dates:
-	        sleeps = f.ApiCall(token, apiCall='/1/user/-/sleep/date/%s.json' % date)
-	        # NOTE: the date should be added to the record here!
 	        print "fetching date %s" % date 
-	        records.append(sleeps)
+	        sleeps = f.ApiCall(token, apiCall='/1/user/-/sleep/date/%s.json' % date)
+	        json_sleeps = json.loads(sleeps)
+	        sleeps_arr = json_sleeps['sleep'] if json_sleeps.has_key('sleep') else []
+	        if len(sleeps_arr) > 0:
+	        	records.append(sleeps_arr)
+	        else:
+	        	records.append([date])
+	        # NOTE: the date should be added to the record here!
 	        
-	    sleeps = [[self.flatten_sleep(sleep) for sleep in json.loads(record)['sleep']] \
-	                  for record in records if json.loads(record).has_key('sleep')]
+	    sleeps = [[self.flatten_sleep(sleep) for sleep in record] for record in records]
 	    sleep_records = list(itertools.chain(*sleeps))
 	    return pd.DataFrame(sleep_records)
 
@@ -248,10 +272,10 @@ class FitbitFetchSleep(FitbitFetchResource):
 		# delete the sleep records for the given date
 		self.delete_fitbit_records('fitbit_sleep', dates)
 		# create the food records for the given date
-		sleep_records = self.fitbit_sleeps(dates).to_dict(outtype='records')
+		sleep_records = self.fitbit_sleeps(dates)
+		sleep_records = sleep_records.where((pd.notnull(sleep_records)), None).to_dict(outtype='records')
 		# insert the new records
 		self.insert_fitbit_sleep_records(sleep_records)
-
 
 ## NOTE: flattend activity will probably be a problem
 ## cuz it doesn't take into account other 
@@ -293,9 +317,10 @@ class FitbitFetchActivities(FitbitFetchResource):
 	    
 	    records = []
 	    for date in dates:
+	    	print "fetching date %s" % date
 	        activities = f.ApiCall(token, apiCall='/1/user/-/activities/date/%s.json' % date)
 	        activities = json.loads(activities)
-	        activities['summary']['timestamp'] = pd.to_datetime(date)
+	        activities['summary']['timestamp'] = pd.to_datetime(date)	        
 	        records.append(activities['summary'])
 	        
 	    activities = [self.flatten_activity(activity) for activity in records]
@@ -412,4 +437,5 @@ def import_fitbit(offset):
 	return "success!"	
 
 
+import_fitbit(5)
 
