@@ -435,5 +435,9 @@ def import_fitbit(offset):
 	return "success!"	
 
 
+def notify_pete():
+	""" test """
+
+
 # import_fitbit(5)
 
