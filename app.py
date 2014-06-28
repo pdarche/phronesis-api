@@ -23,9 +23,9 @@ from settings import settings
 from urls import url_patterns
 
 
-def tacos():
+def update_fitbit():
 	print "trying to fetch"
-	import_fitbit(25)
+	import_fitbit.delay(25)
 
 
 class TornadoApplication(tornado.web.Application):
@@ -37,7 +37,7 @@ def main():
     app = TornadoApplication()
     http_server = tornado.httpserver.HTTPServer(app)
     http_server.listen(options.port)
-    tornado.ioloop.PeriodicCallback(tacos, 180000).start()
+    tornado.ioloop.PeriodicCallback(update_fitbit, 60000).start()
     tornado.ioloop.IOLoop.instance().start()
 
 

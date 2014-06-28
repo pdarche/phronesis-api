@@ -159,16 +159,15 @@ class FitbitFetchFood(FitbitFetchResource):
 		self.insert_fitbit_food_records(food_records)
 
 
-class FitbitFetchSleep():
-	def __init__(self, collectionType, date):
-		self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-		self.conn = psycopg2.connect(self.conn_string)
-		self.cursor = self.conn.cursor()
-		self.collectionType = collectionType
-		self.date = date
+class FitbitFetchSleep(FitbitFetchResource):
+	def __init__(self):
+		super(FitbitFetchSleep, self).__init__()
+		# self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
+		# self.conn = psycopg2.connect(self.conn_string)
+		# self.cursor = self.conn.cursor()
 
-		self.sleep_processor(collectionType, date)
-		self.conn.close()
+		# self.sleep_processor(collectionType, date)
+		# self.conn.close()
 
 	def delete_fitbit_records(self, table, dates):
 	    for date in dates:
@@ -201,7 +200,7 @@ class FitbitFetchSleep():
 	        records.append(sleeps)
 	        
 	    sleeps = [[self.flatten_sleep(sleep) for sleep in json.loads(record)['sleep']] \
-	                  for record in records if len(record) > 0]
+	                  for record in records if json.loads(record).has_key('sleep')]
 	    sleep_records = list(itertools.chain(*sleeps))
 	    return pd.DataFrame(sleep_records)
 
@@ -233,7 +232,7 @@ class FitbitFetchSleep():
 	        self.cursor.execute(sql, values)
 	        self.conn.commit()
 
-	def sleep_processor(self, collectionType, date):
+	def sleep_processor(self, dates):
 		""" takes an update record from the FitBit
 			subscription post, deletes the records
 			for the date of update for resources 
@@ -246,13 +245,10 @@ class FitbitFetchSleep():
 
 		"""
 		# delete the sleep records for the given date
-		print "deleting record for date %s " % date
-		self.delete_fitbit_records('fitbit_sleep', [date])
+		self.delete_fitbit_records('fitbit_sleep', dates)
 		# create the food records for the given date
-		print "fetching records for date %s " % date
-		sleep_records = self.fitbit_sleeps([date]).to_dict(outtype='records')
+		sleep_records = self.fitbit_sleeps(dates).to_dict(outtype='records')
 		# insert the new records
-		print "inserting new records for date %s " % date
 		self.insert_fitbit_sleep_records(sleep_records)
 
 
@@ -260,16 +256,15 @@ class FitbitFetchSleep():
 ## cuz it doesn't take into account other 
 ## logged activities
 
-class FitbitFetchActivities():
-	def __init__(self, collectionType, date):
-		self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-		self.conn = psycopg2.connect(self.conn_string)
-		self.cursor = self.conn.cursor()
-		self.collectionType = collectionType
-		self.date = date
+class FitbitFetchActivities(FitbitFetchResource):
+	def __init__(self):
+		super(FitbitFetchActivities, self).__init__()
+		# self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
+		# self.conn = psycopg2.connect(self.conn_string)
+		# self.cursor = self.conn.cursor()
 
-		self.activities_processor(collectionType, date)
-		self.conn.close()
+		# self.activities_processor(collectionType, date)
+		# self.conn.close()
 
 	def delete_fitbit_records(self, table, dates):
 	    # maybe put another cursor here?
@@ -335,7 +330,7 @@ class FitbitFetchActivities():
 	        self.conn.commit()
 
 
-	def activities_processor(self, collectionType, date):
+	def activities_processor(self, dates):
 		""" takes an update record from the FitBit
 			subscription post, deletes the records
 			for the date of update for resources 
@@ -348,13 +343,10 @@ class FitbitFetchActivities():
 
 		"""	
 		# delete the activity records for the given date
-		print "deleting activity record for date %s " % date
-		self.delete_fitbit_records('fitbit_activity', [date])
+		self.delete_fitbit_records('fitbit_activity', dates)
 		# create the food records for the given date
-		print "fetching records for date %s " % date
-		activity_records = self.fitbit_activities([date]).to_dict(outtype='records')
+		activity_records = self.fitbit_activities(dates).to_dict(outtype='records')
 		# insert the new records
-		print "inserting new records for date %s " % date
 		self.insert_fitbit_activity_records(activity_records)
 
 
@@ -380,72 +372,43 @@ def celtest(collectionType, date):
 
 @celery.task
 def import_fitbit(offset):
+	# Find the signup date of the user
+	fb = fitbit.FitBit()
+	token = 'oauth_token_secret=%s&oauth_token=%s' % \
+		(settings['fitbit_access_secret'], settings['fitbit_access_key'])
+    
+	user = json.loads(fb.ApiCall(token, apiCall='/1/user/-/profile.json'))
+	signup_date = pd.to_datetime(user['user']['memberSince'])
+
+	# Create the date ranges to fetch resources for 
 	f = FitbitFetchResource()
-	base_date = f.find_first_record_date('fitbit_food')
-	dates = f.date_range(base_date, offset)
+	base_date_food = f.find_first_record_date('fitbit_food')
+	base_date_activity = f.find_first_record_date('fitbit_activity')
+	base_date_sleep = f.find_first_record_date('fitbit_sleep')
+	
+	food_dates = f.date_range(base_date_food, offset)
+	activity_dates = f.date_range(base_date_activity, offset)
+	sleep_dates = f.date_range(base_date_sleep, offset)
 
-	# if collectionType == 'foods':
-	foods = FitbitFetchFood()
-	foods.foods_processor(dates)
+	# if the signupdate is creater than the 
+	# last 
+	if pd.to_datetime(base_date_food) > signup_date:
+		print "fetching foods!"
+		foods = FitbitFetchFood()
+		foods.foods_processor(food_dates)
 
-	# elif collectionType == 'activities':
-	# FitbitFetchActivities('activities', dates)
+	if pd.to_datetime(base_date_activity) > signup_date:
+		print "fetching activities!"
+		activities = FitbitFetchActivities()
+		activities.activities_processor(activity_dates)
 
-	# elif collectionType == 'sleep':
-	# FitbitFetchSleep('sleep', dates)
+	if pd.to_datetime(base_date_sleep) > signup_date:
+		print "fetching sleeps!"
+		sleep = FitbitFetchSleep()
+		sleep.sleep_processor(sleep_dates)
 
 	time.sleep(.25)
 	return "success!"	
 
-
-
-# @celery.task
-# def import_fitbit(access_token):
-# 	activities = [
-# 		'activities/steps', 'activities/calories', 
-# 		'activities/distance', 'activities/floors',
-# 		'activities/elevation', 'activities/minutesSedentary', 
-# 		'activities/minutesLightlyActive', 'activities/minutesFairlyActive',
-# 		'activities/minutesVeryActive'
-# 	]
-
-# 	sleep = [
-# 		'sleep/startTime', 'sleep/timeInBed', 'sleep/minutesAsleep',
-# 		'sleep/awakeningsCount', 'sleep/minutesAwake',
-# 		'sleep/minutesToFallAsleep', 'sleep/minutesAfterWakeup',
-# 		'sleep/efficiency'
-# 	]
-
-# 	body = [
-# 		'body/weight', 'body/bmi',
-# 		'body/fat'
-# 	]
-
-# 	food = [
-# 		'foods/log/caloriesIn', 'foods/log/water'
-# 	]
-
-# 	f = fitbit.Fitbit(
-# 			settings['fitbit_consumer_key'], 
-# 			settings['fitbit_consumer_secret'],
-# 			user_key=access_token['key'],
-# 			user_secret=access_token['secret']
-# 		)
-
-# 	activity_records = zip(*[fetch_resource(f, access_token['encoded_user_id'], resource) for resource in activities])
-# 	activity_records = [daily_activity(tup) for tup in activity_records]
-# 	sleep_records = zip(*[fetch_resource(f, access_token['encoded_user_id'], resource) for resource in sleep])
-# 	sleep_records = [daily_sleep(tup) for tup in sleep_records]
-# 	body_records = zip(*[fetch_resource(f, access_token['encoded_user_id'], resource) for resource in body])
-# 	body_records = [daily_body(tup) for tup in body_records]
-# 	food_records = zip(*[fetch_resource(f, access_token['encoded_user_id'], resource) for resource in food])
-# 	food_records = [daily_food(tup) for tup in food_records]
-
-# 	db.activities.insert(activity_records)
-# 	db.sleep.insert(sleep_records)
-# 	db.body.insert(body_records)
-# 	db.food.insert(food_records)
-	
-# 	return "success"
 
 
