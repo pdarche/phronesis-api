@@ -11,6 +11,7 @@ import time
 import numpy as np
 import pandas as pd
 import itertools
+import requests
 
 
 celery = Celery('tasks', broker='amqp://guest@localhost//')
@@ -420,23 +421,32 @@ def import_fitbit(offset):
 		print "fetching foods!"
 		foods = FitbitFetchFood()
 		foods.foods_processor(food_dates)
+		notify_pete('foods')
 
 	if pd.to_datetime(base_date_activity) > signup_date:
 		print "fetching activities!"
 		activities = FitbitFetchActivities()
 		activities.activities_processor(activity_dates)
+		notify_pete('activities')
 
 	if pd.to_datetime(base_date_sleep) > signup_date:
 		print "fetching sleeps!"
 		sleep = FitbitFetchSleep()
 		sleep.sleep_processor(sleep_dates)
+		notify_pete('sleep')
 
 	time.sleep(.25)
 	return "success!"	
 
 
-def notify_pete():
-	""" test """
+def notify_pete(collectionType):
+	return requests.post(
+		settings['mailgun_post_url'],
+		auth=("api", settings['mailgun_api_key']),
+		data={"from": "Pete <pdarche@gmail.com>",
+			"to": ["pdarche@gmail.com"],
+			"subject": "Fitbit %s import complete",
+			"text": "Fitbit %s import complete"}) % (collectionType, collectionType)
 
 
 # import_fitbit(5)
