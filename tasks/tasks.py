@@ -223,7 +223,6 @@ class FitbitFetchSleep(FitbitFetchResource):
 	        	records.append(sleeps_arr)
 	        else:
 	        	records.append([date])
-	        # NOTE: the date should be added to the record here!
 	        
 	    sleeps = [[self.flatten_sleep(sleep) for sleep in record] for record in records]
 	    sleep_records = list(itertools.chain(*sleeps))
@@ -284,12 +283,6 @@ class FitbitFetchSleep(FitbitFetchResource):
 class FitbitFetchActivities(FitbitFetchResource):
 	def __init__(self):
 		super(FitbitFetchActivities, self).__init__()
-		# self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"
-		# self.conn = psycopg2.connect(self.conn_string)
-		# self.cursor = self.conn.cursor()
-
-		# self.activities_processor(collectionType, date)
-		# self.conn.close()
 
 	def delete_fitbit_records(self, table, dates):
 	    # maybe put another cursor here?
@@ -383,14 +376,19 @@ def add(x, y):
 
 @celery.task
 def celtest(collectionType, date):
+	dates = [date]
+
 	if collectionType == 'foods':
-		FitbitFetchFood(collectionType, date)
+		foods = FitbitFetchFood()
+		foods.foods_processor(dates)
 
 	elif collectionType == 'activities':
-		FitbitFetchActivities(collectionType, date)
+		activities = FitbitFetchActivities()
+		activities.activities_processor(dates)
 
 	elif collectionType == 'sleep':
-		FitbitFetchSleep(collectionType, date)
+		sleep = FitbitFetchSleep()
+		sleep.sleep_processor(dates)
 
 	time.sleep(.25)
 	return "%s, %s" % (collectionType, date)
@@ -437,5 +435,5 @@ def import_fitbit(offset):
 	return "success!"	
 
 
-import_fitbit(5)
+# import_fitbit(5)
 
