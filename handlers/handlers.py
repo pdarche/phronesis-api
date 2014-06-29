@@ -13,14 +13,25 @@ from bson import objectid
 from passlib.apps import custom_app_context as pwd_context
 
 from models.user import User
+from models.user import Service
 import mixins.mixins as mixins
 
 from tasks.tasks import add
 from tasks.tasks import celtest
 # from tasks.tasks import import_fitbit
 
-client = MongoClient('localhost', 27017)
-db = client.phronesis_dev
+from sqlalchemy import *
+from sqlalchemy.orm import sessionmaker
+
+
+engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
+
+# client = MongoClient('localhost', 27017)
+# db = client.phronesis_dev
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
 
 class BaseHandler(tornado.web.RequestHandler):
 	def get_current_user(self):
@@ -36,30 +47,34 @@ class MainHandler(BaseHandler):
 
 
 class SignupHandler(tornado.web.RequestHandler):
+	def get(self):
+		self.render('signup.html')
+
 	def post(self):
-		username = self.get_argument('username')
+		email = self.get_argument('email')
 		password = self.get_argument('password')
 		hashed_pwd = pwd_context.encrypt(password)
-		user = db.users.find_one({'username': username})
+		curr_users = session.query(User).filter_by(email_address=email).count()
+		print curr_users
 
-		if user == None:
-			newuser = copy.deepcopy(User)
-			newuser["username"] = username
-			newuser["password"] = hashed_pwd
-			db.users.insert(newuser)
+		if curr_users != 1:
+			newuser = User(email_address=email, password=hashed_pwd)
+			session.add(newuser)
+			session.commit()
+
 			response = {'response':200, 'data':'signed up!'}
 		else:
-			response = {'response':400, 'data':'username unavailable!'}
+			response = {'response':400, 'data':'That email is already registered'}
 		
 		self.write(json.dumps(response))
 
 
 class LoginHandler(tornado.web.RequestHandler):
 	def post(self):
-		username = self.get_argument('username')
+		email = self.get_argument('email')
 		password = self.get_argument('password')
-		user = db.users.find_one({'username': username})
-		verify = pwd_context.verify(password, user['password'])
+		user = session.query(User).filter_by(email_address=email).first()
+		verify = pwd_context.verify(password, user.password)
 
 		if len(user) == 0 or username == None:
 			response = {'response':404, 'response': 'Sorry, no user with that username'}
@@ -69,7 +84,7 @@ class LoginHandler(tornado.web.RequestHandler):
 			self.set_secure_cookie("username", username)
 			response = {'response':200, 'data':'logged in'}
 
-		self.write(response)
+		# self.write(response)
 
 	def get(self):
 		self.render('login.html')
@@ -85,15 +100,6 @@ class FitbitSubscribeHandler(BaseHandler):
 				celtest.delay(body['collectionType'], body['date'])
 		
 		self.set_status(204)
-
-
-#class FitbitFetchResource():
-#	def get(self):
-#		paths = {
-#			"sleep": ,
-#			"activities": ,
-#			"foods":
-#		}
 
 
 class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin): 

@@ -37,7 +37,7 @@ def main():
     app = TornadoApplication()
     http_server = tornado.httpserver.HTTPServer(app)
     http_server.listen(options.port)
-    tornado.ioloop.PeriodicCallback(update_fitbit, 60000).start()
+    # tornado.ioloop.PeriodicCallback(update_fitbit, 60000).start()
     tornado.ioloop.IOLoop.instance().start()
 
 
