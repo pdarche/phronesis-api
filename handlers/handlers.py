@@ -26,9 +26,6 @@ from sqlalchemy.orm import sessionmaker
 
 engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
 
-# client = MongoClient('localhost', 27017)
-# db = client.phronesis_dev
-
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -61,7 +58,6 @@ class SignupHandler(tornado.web.RequestHandler):
 			newuser = User(email_address=email, password=hashed_pwd)
 			session.add(newuser)
 			session.commit()
-
 			response = {'response':200, 'data':'signed up!'}
 		else:
 			response = {'response':400, 'data':'That email is already registered'}
