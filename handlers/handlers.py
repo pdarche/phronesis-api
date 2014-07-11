@@ -72,15 +72,15 @@ class LoginHandler(tornado.web.RequestHandler):
 		user = session.query(User).filter_by(email_address=email).first()
 		verify = pwd_context.verify(password, user.password)
 
-		if len(user) == 0 or username == None:
+		if user is None or email == None:
 			response = {'response':404, 'response': 'Sorry, no user with that username'}
 		elif not verify:
 			response = {'response':413, 'data': 'unauthorized'}
 		else:
-			self.set_secure_cookie("username", username)
+			self.set_secure_cookie("username", email)
 			response = {'response':200, 'data':'logged in'}
 
-		# self.write(response)
+		self.write(response)
 
 	def get(self):
 		self.render('login.html')
@@ -88,11 +88,11 @@ class LoginHandler(tornado.web.RequestHandler):
 
 
 class FitbitSubscribeHandler(BaseHandler):
-	def post(self):	
+	def post(self):
 		files = self.request.files
 		for update in files['updates']:
 			for body in json.loads(update['body']):
-				db.fitbit_test.insert(body)
+				# db.fitbit_test.insert(body)
 				celtest.delay(body['collectionType'], body['date'])
 		
 		self.set_status(204)
@@ -102,8 +102,8 @@ class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin):
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	def get(self):
-		curr_user = self.get_secure_cookie("username")
-		curr_user = db.user.find_one({"username":curr_user})
+		user_email = self.get_secure_cookie("username")
+		user = session.query(User).filter_by(email_address=user_email).first()
 
 		if self.get_argument('oauth_token', None):
 			print "doin dis thang"
@@ -111,7 +111,6 @@ class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin):
 			return
 
 		# if the user has fitbit info, respond accordingly
-
 		self.authorize_redirect()
 
 	def _fitbit_on_auth(self, user):
@@ -120,8 +119,9 @@ class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin):
 			raise tornado.web.HTTPError(500, 'Fitbit authentication failed')
 
 		curr_user = self.get_secure_cookie("username")
-		db.users.update({"username":curr_user}, {'$set': {"fitbit": user}})
 
+		print "the incoming fitbit user is %r" % user
+		
 		self.fitbit_request(
 			'/user/-/apiSubscriptions/1',
 			access_token= user['access_token'],
@@ -193,55 +193,81 @@ class MovesConnectHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 			response_type="code"
 		)
 
-    def _on_login(self, user):
+    def _on_login(self, moves_user):
         # Do something interesting with user here. See: user["access_token"]
-		curr_user = self.get_secure_cookie("username")
-		db.users.update({"username":curr_user}, {'$set': {"moves": user}})
+		user_email = self.get_secure_cookie("username")
+		user = session.query(User).filter_by(email_address=user_email).first()
 
-		self.write(json.dumps({"response":200, "data":"sucess"}))
+		moves_service = Service(
+			parent_id=user.id,
+			name='moves',
+			identifier=moves_user['userId'],
+			start_date=moves_user['profile']['firstDate'],
+			access_secret=moves_user['access_token']['access_token'],
+			token_type=moves_user['access_token']['token_type'],
+			token_expiration=moves_user['access_token']['expires_in'],
+			refresh_token=moves_user['access_token']['refresh_token'],
+			timezone=moves_user['profile']['currentTimeZone']['id'],
+			utc_offset=moves_user['profile']['currentTimeZone']['offset']
+		)
+		session.add(moves_service)
+		session.commit()
+
+		# Celery task to import the users data from Moves
+
+
+		self.write(json.dumps({"response":200, "data": "success"}))
 		self.finish()
 
 
 class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 	@tornado.web.asynchronous
 	def get(self):
-		curr_user = self.get_secure_cookie("username")
-		curr_user = db.users.find_one({"username":curr_user})
-		access_token = curr_user["moves"]["access_token"]["access_token"]
+		user_email = self.get_secure_cookie("username")
+		user = session.query(User).filter_by(email_address=user_email).first()
+		date = self.get_argument('date')
+		
+		# if the user doesn't have a Moves account
+		# redirect them to the moves connect
+		user_moves = session.query(Service) \
+							.filter_by(
+								parent_id = user.id,
+								name = 'moves').first()
+		access_token = user_moves.access_secret
 
-		print access_token
+		if date is None:
+			date = datetime.datetime.now().strftime('%Y%m%d')
 
 		self.moves_request(
-		    path="/user/summary/daily/201310",
+		    path="/user/storyline/daily/%s" % date,
 		    callback=self._on_data,
 		    access_token=access_token,
 		    args={"trackPoints": "true"}
 		)
 
 	def _on_data(self, data):
-
 		self.write(json.dumps(data))
 		self.finish()
 
 
-class MovesImportHandler(tornado.web.RequestHandler, mixins.MovesMixin):
-	@tornado.web.asynchronous
-	def get(self):
-		curr_user = self.get_secure_cookie("username")
-		curr_user = db.users.find_one({"username":curr_user})
-		access_token = curr_user["moves"]["access_token"]["access_token"]
+# class MovesImportHandler(tornado.web.RequestHandler, mixins.MovesMixin):
+# 	@tornado.web.asynchronous
+# 	def get(self):
+# 		curr_user = self.get_secure_cookie("username")
+# 		curr_user = db.users.find_one({"username":curr_user})
+# 		access_token = curr_user["moves"]["access_token"]["access_token"]
 
-		self.moves_request(
-		    path="/user/summary/daily/201310",
-		    callback=self._on_data,
-		    access_token=access_token,
-		    args={"trackPoints": "true"}
-		)
+# 		self.moves_request(
+# 		    path="/user/storyline/daily/201310",
+# 		    callback=self._on_data,
+# 		    access_token=access_token,
+# 		    args={"trackPoints": "true"}
+# 		)
 
-	def _on_data(self, data):
+# 	def _on_data(self, data):
 
-		self.write(json.dumps(data))
-		self.finish()
+# 		self.write(json.dumps(data))
+# 		self.finish()
 
 
 class WithingsConnectHandler(BaseHandler, mixins.WithingsMixin):
