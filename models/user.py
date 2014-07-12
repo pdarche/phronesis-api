@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
-# engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
+engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
 
 class User(Base):
     __tablename__ = 'users'
@@ -35,6 +35,58 @@ class Service(Base):
     refresh_token = Column(String)
     timezone = Column(String)
     utc_offset = Column(Integer)
+
+
+class MovesSegment(Base):
+	__tablename__ = 'moves_segments'
+
+	id = Column(Integer, primary_key=True)
+	parent_id = Column(Integer, ForeignKey('users.id'))
+	type = Column(String)
+	start_time = Column(DateTime(timezone=True))
+	end_time = Column(DateTime(timezone=True))
+	last_update = Column(DateTime(timezone=True))
+	place = relationship('MovesPlace', uselist=False, backref="moves_segments")
+	activities = relationship('MovesActivity')
+
+
+class MovesPlace(Base):
+	__tablename__ = 'moves_places'
+
+	id = Column(Integer, primary_key=True)
+	parent_id = Column(Integer, ForeignKey('moves_segments.id'))
+	type = Column(String)
+	place_id = Column(Integer)
+	lat = Column(Float)
+	lon = Column(Float)
+
+
+class MovesActivity(Base):
+	__tablename__ = 'moves_activities'
+
+	id = Column(Integer, primary_key=True)
+	parent_id = Column(Integer, ForeignKey('moves_segments.id'))
+	distance = Column(Integer)
+	group = Column(String)
+	trackpoints = relationship('MovesTrackPoint')
+	calories = Column(Integer)
+	manual = Column(Boolean)
+	steps = Column(Integer)
+	start_time = Column(DateTime(timezone=True))
+	activity = Column(String)
+	duration = Column(Integer)
+	end_time = Column(DateTime(timezone=True))
+
+
+class MovesTrackPoint(Base):
+	__tablename__ = 'moves_track_points'
+
+	id = Column(Integer, primary_key=True)
+	parent_id = Column(Integer, ForeignKey('moves_activities.id'))
+	lat = Column(Float)
+	lon = Column(Float)
+	time = Column(DateTime(timezone=True))
+
 
 # Base.metadata.create_all(engine)
 

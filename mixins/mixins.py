@@ -1041,7 +1041,7 @@ class MovesMixin(object):
     _OAUTH_AUTHORIZE_URL    = "https://api.moves-app.com/oauth/v1/authorize"
     _OAUTH_AUTHENTICATE_URL = "https://api.moves-app.com/oauth/v1/authenticate"
 
-    _BASE_URL = "https://api.moves-app.com/api/v1"
+    _BASE_URL = "https://api.moves-app.com/api/1.1"
 
     @property
     def httpclient_instance(self):

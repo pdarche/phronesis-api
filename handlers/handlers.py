@@ -12,8 +12,7 @@ import copy
 from bson import objectid
 from passlib.apps import custom_app_context as pwd_context
 
-from models.user import User
-from models.user import Service
+from models.user import *
 import mixins.mixins as mixins
 
 from tasks.tasks import add
@@ -224,7 +223,8 @@ class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 	@tornado.web.asynchronous
 	def get(self):
 		user_email = self.get_secure_cookie("username")
-		user = session.query(User).filter_by(email_address=user_email).first()
+		user = session.query(User) \
+					.filter_by(email_address=user_email).first()
 		date = self.get_argument('date')
 		
 		# if the user doesn't have a Moves account
@@ -246,8 +246,70 @@ class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 		)
 
 	def _on_data(self, data):
+		storyline = data[0]
+		self.insert_segments(storyline['segments'])
 		self.write(json.dumps(data))
 		self.finish()
+
+	def insert_segments(self, segments):
+		segment_objects = [self.create_moves_segment(s) \
+							for s in segments]
+		for obj in segment_objects:
+			session.add(obj)
+		session.commit()
+
+	def create_moves_segment(self, segment):
+		return MovesSegment(
+				type = segment['type'],
+				start_time = segment['startTime'],
+				end_time = segment['endTime'],
+				last_update = segment['lastUpdate'],
+				place = self.create_moves_place(segment['place']) \
+					if segment.has_key('place') else None,
+				activities = self.create_moves_activities(segment['activities']) \
+					if segment.has_key('activities') else []
+			)
+
+	def create_moves_place(self, place):
+		return MovesPlace(
+				type = place['type'],
+				place_id = place['id'],
+				lat = place['location']['lat'],
+				lon = place['location']['lon']
+			)
+
+	def create_moves_activities(self, activities):
+		return [self.create_moves_activity(activity) \
+					for activity in activities]
+
+	def create_moves_activity(self, activity):
+		return MovesActivity(
+				distance =  activity['distance'],
+				group = activity['group'],
+				trackpoints = self.create_moves_trackpoints(activity['trackPoints']) \
+					if activity.has_key('trackPoints') else None,
+				calories = activity['calories'] \
+					if activity.has_key('calories')	else None,
+				manual = activity['manual'],
+				steps = activity['steps'] \
+					if activity.has_key('steps')	else None,
+				start_time = activity['startTime'],
+				activity = activity['activity'],
+				duration = activity['duration'],
+				end_time = activity['endTime']
+			)
+
+	def create_moves_trackpoints(self, trackpoints):
+		return [self.create_trackpoint(tp) \
+					for tp in trackpoints]
+
+	def create_trackpoint(self, trackpoint):
+		return MovesTrackPoint(
+				lat = trackpoint['lat'],
+				lon = trackpoint['lon'],
+				time = trackpoint['time']
+			)
+
 
 
 # class MovesImportHandler(tornado.web.RequestHandler, mixins.MovesMixin):
