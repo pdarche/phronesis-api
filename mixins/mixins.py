@@ -1132,7 +1132,7 @@ class MovesMixin(object):
         If the request is a POST, post_args should be provided. Query
         string arguments should be given as keyword arguments.
 
-        See: https://developer.foursquare.com/docs/
+        
         """
         url = self.__class__._BASE_URL + path
 

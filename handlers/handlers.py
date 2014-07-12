@@ -15,9 +15,8 @@ from passlib.apps import custom_app_context as pwd_context
 from models.user import *
 import mixins.mixins as mixins
 
-from tasks.tasks import add
 from tasks.tasks import celtest
-# from tasks.tasks import import_fitbit
+from tasks.tasks import import_moves
 
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
@@ -175,6 +174,8 @@ class FitbitPushHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
 class MovesConnectHandler(tornado.web.RequestHandler, mixins.MovesMixin):
     @tornado.web.asynchronous
     def get(self):
+    	# if the user already has a moves 
+    	# account connected, don't create a record
 		if self.get_argument("code", False):
 			self.get_authenticated_user(
 			    redirect_uri='http://localhost:8080/connect/moves',
@@ -193,7 +194,6 @@ class MovesConnectHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 		)
 
     def _on_login(self, moves_user):
-        # Do something interesting with user here. See: user["access_token"]
 		user_email = self.get_secure_cookie("username")
 		user = session.query(User).filter_by(email_address=user_email).first()
 
@@ -214,9 +214,13 @@ class MovesConnectHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 
 		# Celery task to import the users data from Moves
 
-
 		self.write(json.dumps({"response":200, "data": "success"}))
 		self.finish()
+
+
+class MovesTestHandler(tornado.web.RequestHandler):
+	def get(self):
+		import_moves('20140304', '1')
 
 
 class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
@@ -246,6 +250,7 @@ class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 		)
 
 	def _on_data(self, data):
+		print "GOT SOME DATA NOW SAVING!"
 		storyline = data[0]
 		self.insert_segments(storyline['segments'])
 		self.write(json.dumps(data))

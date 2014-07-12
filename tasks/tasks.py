@@ -5,14 +5,24 @@ from settings import settings
 import psycopg2
 from celery import Celery
 import json
+
 import fitbit
+import moves
+
 import datetime
 import time
 import numpy as np
 import pandas as pd
 import itertools
 import requests
+from sqlalchemy import *
+from sqlalchemy.orm import sessionmaker
+from models.user import *
 
+engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
+
+Session = sessionmaker(bind=engine)
+session = Session()
 
 celery = Celery('tasks', broker='amqp://guest@localhost//')
 
@@ -453,6 +463,22 @@ def import_fitbit(offset):
 	return "success!"	
 
 
+@celery.task
+def import_moves(date, id):
+	m = MovesStoryline()
+	moves_service = session.query(Service).filter_by(name='moves', parent_id=1).first()
+	access_token = moves_service.access_secret
+	
+	Moves = moves.MovesClient(settings['moves_client_id'], settings['moves_client_secret'])
+	Moves.access_token = access_token
+
+	request_url = 'user/storyline/daily/%s' % date 
+	data = Moves.api(request_url, 'GET', params={'access_token': access_token}).json()
+	m._on_data(data)
+
+	return "suceess"
+
+
 def notify_pete(notification):
 	return requests.post(
 		settings['mailgun_post_url'],
@@ -463,9 +489,60 @@ def notify_pete(notification):
 			"text": "%s"  % notification})
 
 
-# def test(date, offset):
-# 	foods = FitbitFetchActivities()
-# 	dates = foods.date_range(date, offset)
-# 	foods.activities_processor(dates)
+class MovesStoryline():
+	def _on_data(self, data):
+		storyline = data[0]
+		print "the storyline is %r" % storyline
+		self.insert_segments(storyline['segments'])
+		self.write(json.dumps(data))
+		self.finish()
+
+	def insert_segments(self, segments):
+		segment_objects = [self.create_moves_segment(s) \
+							for s in segments]
+		for obj in segment_objects:
+			session.add(obj)
+		session.commit()
+
+	def create_moves_segment(self, segment):
+		return MovesSegment(
+				type = segment['type'],
+				start_time = segment['startTime'],
+				end_time = segment['endTime'],
+				last_update = segment['lastUpdate'],
+				place = self.create_moves_place(segment['place']) \
+					if segment.has_key('place') else None,
+				activities = self.create_moves_activities(segment['activities']) \
+					if segment.has_key('activities') else []
+			)
+
+	def create_moves_place(self, place):
+		return MovesPlace(
+				type = place['type'],
+				place_id = place['id'],
+				lat = place['location']['lat'],
+				lon = place['location']['lon']
+			)
+
+	def create_moves_activities(self, activities):
+		return [self.create_moves_activity(activity) \
+					for activity in activities]
+
+	def create_moves_activity(self, activity):
+		return MovesActivity(
+				distance =  activity['distance'],
+				group = activity['group'],
+				trackpoints = self.create_moves_trackpoints(activity['trackPoints']) \
+					if activity.has_key('trackPoints') else None,
+				calories = activity['calories'] \
+					if activity.has_key('calories')	else None,
+				manual = activity['manual'],
+				steps = activity['steps'] \
+					if activity.has_key('steps') else None,
+				start_time = activity['startTime'],
+				activity = activity['activity'],
+				duration = activity['duration'],
+				end_time = activity['endTime']
+			)	
 
 

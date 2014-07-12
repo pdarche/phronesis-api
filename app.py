@@ -15,7 +15,6 @@ from tornado.options import options
 import tornado.web
 #import tornado.wsgi
 
-from tasks.tasks import add
 from tasks.tasks import celtest
 from tasks.tasks import import_fitbit
 
