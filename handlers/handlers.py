@@ -220,7 +220,9 @@ class MovesConnectHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 
 class MovesTestHandler(tornado.web.RequestHandler):
 	def get(self):
-		import_moves('20140304', '1')
+		date = self.get_argument('date')
+		import_moves.delay(date, '1')
+		self.write("success")
 
 
 class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):

@@ -17,6 +17,7 @@ import tornado.web
 
 from tasks.tasks import celtest
 from tasks.tasks import import_fitbit
+from tasks.tasks import import_moves
 
 from settings import settings
 from urls import url_patterns
@@ -25,6 +26,11 @@ from urls import url_patterns
 def update_fitbit():
 	print "trying to fetch"
 	import_fitbit.delay(5)
+
+
+def update_moves():
+    print "trying to fetch"
+    import_moves.delay()
 	
 
 class TornadoApplication(tornado.web.Application):
@@ -36,7 +42,7 @@ def main():
     app = TornadoApplication()
     http_server = tornado.httpserver.HTTPServer(app)
     http_server.listen(options.port)
-    # tornado.ioloop.PeriodicCallback(update_fitbit, 60000).start()
+    tornado.ioloop.PeriodicCallback(update_moves, 60000).start()
     tornado.ioloop.IOLoop.instance().start()
 
 

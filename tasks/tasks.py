@@ -464,7 +464,7 @@ def import_fitbit(offset):
 
 
 @celery.task
-def import_moves(date, id):
+def import_moves():
 	m = MovesStoryline()
 	moves_service = session.query(Service).filter_by(name='moves', parent_id=1).first()
 	access_token = moves_service.access_secret
@@ -472,9 +472,24 @@ def import_moves(date, id):
 	Moves = moves.MovesClient(settings['moves_client_id'], settings['moves_client_secret'])
 	Moves.access_token = access_token
 
-	request_url = 'user/storyline/daily/%s' % date 
-	data = Moves.api(request_url, 'GET', params={'access_token': access_token}).json()
-	m._on_data(data)
+	# if the date is none, find the earliest date with data 
+	# if that date is greater than the signup date, fetch the moves data for the day
+	start_date = session.query(MovesSegment) \
+		    .filter_by(parent_id=1) \
+		    .order_by(MovesSegment.start_time) \
+		    .first().start_time
+
+	dates = [(start_date - datetime.timedelta(days=offset)) \
+				.strftime('%Y%m%d') for offset in range(1,50)]
+
+	print start_date
+
+	for date in dates:
+		request_url = 'user/storyline/daily/%s' % date
+		data = Moves.api(request_url, 'GET', params={'access_token': access_token}).json()
+
+		m._on_data(data)
+		time.sleep(.25)
 
 	return "suceess"
 
@@ -492,10 +507,7 @@ def notify_pete(notification):
 class MovesStoryline():
 	def _on_data(self, data):
 		storyline = data[0]
-		print "the storyline is %r" % storyline
 		self.insert_segments(storyline['segments'])
-		self.write(json.dumps(data))
-		self.finish()
 
 	def insert_segments(self, segments):
 		segment_objects = [self.create_moves_segment(s) \
@@ -506,6 +518,7 @@ class MovesStoryline():
 
 	def create_moves_segment(self, segment):
 		return MovesSegment(
+				parent_id = 1, # NOTE: this will have to change!
 				type = segment['type'],
 				start_time = segment['startTime'],
 				end_time = segment['endTime'],
@@ -533,7 +546,7 @@ class MovesStoryline():
 				distance =  activity['distance'],
 				group = activity['group'],
 				trackpoints = self.create_moves_trackpoints(activity['trackPoints']) \
-					if activity.has_key('trackPoints') else None,
+					if activity.has_key('trackPoints') else [],
 				calories = activity['calories'] \
 					if activity.has_key('calories')	else None,
 				manual = activity['manual'],

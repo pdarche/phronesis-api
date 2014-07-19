@@ -36,6 +36,10 @@ class Service(Base):
     timezone = Column(String)
     utc_offset = Column(Integer)
 
+#####################################
+#			Moves Models			#
+#####################################
+
 
 class MovesSegment(Base):
 	__tablename__ = 'moves_segments'
