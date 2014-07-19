@@ -14,14 +14,33 @@
 #papers {
 	display: flex;
 	flex-direction: row;
-	flex-wrap: wrap;	
+	flex-wrap: wrap;
 }
 
 .paper {
-	flex-basis: 30%;
-	height: 200px;
 	border: 1px solid beige;
+	flex-basis: 42%;
+	height: 200px;
 	margin: 1.5%;
+	padding: 10px;
+}
+
+.paper ul {
+	list-style-type: none;
+	padding: 0px;
+}
+
+.paper li {
+	/*border: 1px solid gray;*/
+	border-radius: 5px;
+	display: inline-block;
+	font-size: 12px;
+	margin-right: 5px;
+	padding: 3px;
+}
+
+.paper h4 {
+	margin: 0px 5px;
 }
 
 .paper .abstract {
