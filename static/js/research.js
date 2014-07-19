@@ -43,6 +43,7 @@ $(document).ready(function(){
       data: data,
       success: function(){
         alert('success')
+        el.find('input').empty()
       },
       error: function(){
         alert('error')
