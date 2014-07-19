@@ -8,6 +8,7 @@ import pymongo
 import time
 import datetime
 import copy
+import re
 
 from bson import objectid
 from passlib.apps import custom_app_context as pwd_context
@@ -21,9 +22,12 @@ from tasks.tasks import import_moves
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
 
+# Mongo
+client = MongoClient('localhost', 27017)
+db = client.phronesis_research_papers
 
+# SQL Alchemy
 engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
-
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -92,41 +96,64 @@ class ResearchPaperHandler(BaseHandler):
 
 class ResearchPaperAPIHandler(BaseHandler):
 	def get(self):
-		title = self.get_argument('title')
-		keyword = self.get_argument('title')
-		documents = session.query(ResearchPaper, ResearchKeyword) \
-			.filter(or_(ResearchPaper.title.contains(title),
-					ResearchKeyword.keyword.contains(keyword))).all()
+		key = self.get_argument('param_name')
+		value = self.get_argument('value')
+		favorite = self.get_argument('favorite')
+
+		print value
+		search_val = re.compile(".*%s.*" % value, re.IGNORECASE)
+		# query = {"favorite": favorite}
+		query = {}
+		query[str(key)] = search_val
+		projection = {"_id":0}
+
+		papers = db.papers.find(query, projection)
+		self.write(json.dumps({"data": list(papers)}))
+
+		# sqlAlchem version
+		# documents = session.query(ResearchPaper, ResearchKeyword) \
+		# 	.filter(or_(ResearchPaper.title.contains(title),
+		# 			ResearchKeyword.keyword.contains(keyword))).all()
 
 		# docs = map(lambda d: {"title": d.title}, documents)
 		
 		# self.write(json.dumps(docs))
-		self.write(200)
-
 
 	def post(self):
 		title = self.get_argument('title')
 		abstract = self.get_argument('abstract')
 		url = self.get_argument('url')
 		keywords = self.get_argument('keywords')
+		adjectives = self.get_argument('adjectives')
 		note = self.get_argument('note')
 		favorite = self.get_argument('favorite')
-		note = self.get_argument('note')
-		
-		keywords = [kw.strip() for kw in keywords.split(',')]
-		
-		paper = ResearchPaper(
-			title=title,
-			abstract=abstract,
-			url=url,
-			favorite=favorite,
-			keywords=[ResearchKeyword(keyword=kw) for kw in keywords],
-			note=note
-		)
-		session.add(paper)
-		session.commit()
 
+		# Mongo Version
+		data = {
+			"title": title,
+			"abstract": abstract,
+			"url": url,
+			"keywords": [kw.strip() for kw in keywords.split(',')],
+			"adjectives": [adj.strip() for adj in adjectives.split(',')],
+			"note": note,
+			"favorite": favorite
+		}
+
+		db.papers.insert(data)
 		self.write({'status':200})
+		# SQL Alchemy Version
+		# keywords = [kw.strip() for kw in keywords.split(',')]
+		
+		# paper = ResearchPaper(
+		# 	title=title,
+		# 	abstract=abstract,
+		# 	url=url,
+		# 	favorite=favorite,
+		# 	keywords=[ResearchKeyword(keyword=kw) for kw in keywords],
+		# 	note=note
+		# )
+		# session.add(paper)
+		# session.commit()
 
 
 class FitbitSubscribeHandler(BaseHandler):

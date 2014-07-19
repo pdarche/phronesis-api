@@ -1,0 +1,13 @@
+<script id="research_paper_template" type="text/x-handlebars-template">
+	{{#each papers}}
+	<div class="paper">
+  		<h5>{{this.title}}</h5>
+	  	<ul class="keywords">
+	  		{{#each this.keywords}}
+	  			<li class="keyword"> {{this}} </li>
+	  		{{/each}}
+	  	</ul>
+  		<p class="abstract">{{this.abstract}}</p>
+  	</div>
+  	{{/each}}
+</script>
