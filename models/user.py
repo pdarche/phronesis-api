@@ -1,6 +1,7 @@
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from marshmallow import Serializer, fields
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
@@ -37,18 +38,22 @@ class Service(Base):
     utc_offset = Column(Integer)
 
 
+
 #############################
 #	Research Paper Models	#
 #############################
+
 class ResearchPaper(Base):
     __tablename__ = 'research_papers'
 
     id = Column(Integer, primary_key=True)
     title = Column(String)
+    abstract = Column(Text)
     url = Column(String)
-    member_since = Column(DateTime)
+    favorite = Column(Boolean)
     keywords = relationship("ResearchKeyword")
-    notes = relationship("ResearchPaperNote")
+    note = Column(Text)
+    #relationship("ResearchPaperNote")
 
 
 class ResearchKeyword(Base):
@@ -59,18 +64,18 @@ class ResearchKeyword(Base):
 	keyword = Column(String)
 
 
-class ResearchNote(Base):
-	__tablename__ = 'research_notes'
+# class ResearchNote(Base):
+# 	__tablename__ = 'research_notes'
 
-	id = Column(Integer, primary_key=True)
-	parent_id = Column(Integer, ForeignKey('research_papers.id'))
-	note = Column(String)
+# 	id = Column(Integer, primary_key=True)
+# 	parent_id = Column(Integer, ForeignKey('research_papers.id'))
+# 	note = Column(String)
+
 
 
 #####################################
 #			Moves Models			#
 #####################################
-
 
 class MovesSegment(Base):
 	__tablename__ = 'moves_segments'

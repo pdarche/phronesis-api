@@ -85,6 +85,50 @@ class LoginHandler(tornado.web.RequestHandler):
 		# self.write({"response":300, "data":"redirect"})
 
 
+class ResearchPaperHandler(BaseHandler):
+	def get(self):
+		self.render('research-papers.html')
+
+
+class ResearchPaperAPIHandler(BaseHandler):
+	def get(self):
+		title = self.get_argument('title')
+		keyword = self.get_argument('title')
+		documents = session.query(ResearchPaper, ResearchKeyword) \
+			.filter(or_(ResearchPaper.title.contains(title),
+					ResearchKeyword.keyword.contains(keyword))).all()
+
+		# docs = map(lambda d: {"title": d.title}, documents)
+		
+		# self.write(json.dumps(docs))
+		self.write(200)
+
+
+	def post(self):
+		title = self.get_argument('title')
+		abstract = self.get_argument('abstract')
+		url = self.get_argument('url')
+		keywords = self.get_argument('keywords')
+		note = self.get_argument('note')
+		favorite = self.get_argument('favorite')
+		note = self.get_argument('note')
+		
+		keywords = [kw.strip() for kw in keywords.split(',')]
+		
+		paper = ResearchPaper(
+			title=title,
+			abstract=abstract,
+			url=url,
+			favorite=favorite,
+			keywords=[ResearchKeyword(keyword=kw) for kw in keywords],
+			note=note
+		)
+		session.add(paper)
+		session.commit()
+
+		self.write({'status':200})
+
+
 class FitbitSubscribeHandler(BaseHandler):
 	def post(self):
 		files = self.request.files
