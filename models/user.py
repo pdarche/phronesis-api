@@ -36,6 +36,37 @@ class Service(Base):
     timezone = Column(String)
     utc_offset = Column(Integer)
 
+
+#############################
+#	Research Paper Models	#
+#############################
+class ResearchPaper(Base):
+    __tablename__ = 'research_papers'
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String)
+    url = Column(String)
+    member_since = Column(DateTime)
+    keywords = relationship("ResearchKeyword")
+    notes = relationship("ResearchPaperNote")
+
+
+class ResearchKeyword(Base):
+	__tablename__ = 'research_keywords'
+
+	id = Column(Integer, primary_key=True)
+	parent_id = Column(Integer, ForeignKey('research_papers.id'))
+	keyword = Column(String)
+
+
+class ResearchNote(Base):
+	__tablename__ = 'research_notes'
+
+	id = Column(Integer, primary_key=True)
+	parent_id = Column(Integer, ForeignKey('research_papers.id'))
+	note = Column(String)
+
+
 #####################################
 #			Moves Models			#
 #####################################
