@@ -1,7 +1,9 @@
 <script id="research_paper_template" type="text/x-handlebars-template">
 	{{#each papers}}
 	<div class="paper">
-  		<h4>{{this.title}}</h4>
+  		<a href="{{this.url}}" target="_blank">
+  			<h4>{{this.title}}</h4>
+  		</a>
 	  	<ul class="keywords">
 	  		{{#each this.keywords}}
 	  			<li class="keyword"> {{this}} </li>
