@@ -11,6 +11,7 @@ import copy
 import re
 
 from bson import objectid
+from bson import json_util
 from passlib.apps import custom_app_context as pwd_context
 
 from models.user import *
@@ -105,10 +106,10 @@ class ResearchPaperAPIHandler(BaseHandler):
 		# query = {"favorite": favorite}
 		query = {}
 		query[str(key)] = search_val
-		projection = {"_id":0}
 
-		papers = db.papers.find(query, projection)
-		self.write(json.dumps({"data": list(papers)}))
+		papers = db.papers.find(query)
+		papers = [self.conver_obj_id(doc) for doc in list(papers)]
+		self.write(json.dumps({"data": papers}))
 
 		# sqlAlchem version
 		# documents = session.query(ResearchPaper, ResearchKeyword) \
@@ -155,6 +156,10 @@ class ResearchPaperAPIHandler(BaseHandler):
 		# session.add(paper)
 		# session.commit()
 
+	def conver_obj_id(self, doc):
+		doc['_id'] = str(doc['_id'])
+
+		return doc
 
 class FitbitSubscribeHandler(BaseHandler):
 	def post(self):

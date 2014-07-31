@@ -20,7 +20,7 @@
 .paper {
 	border: 1px solid beige;
 	flex-basis: 42%;
-	height: 200px;
+	/*height: 200px;*/
 	margin: 1.5%;
 	padding: 10px;
 }
@@ -43,7 +43,28 @@
 	margin: 0px 5px;
 }
 
-.paper .abstract {
+/*.paper .abstract {
+	display: none;
+}*/
+
+.paper .edit {
+	font-size: 10px;
+	text-decoration: underline;
+}
+
+.paper .section {
+	margin: 5px 0px 20px 0px;
+}
+
+.paper h5 {
+	margin: 5px 0px;
+}
+
+.paper p {
+	margin: 5px 0px;
+}
+
+.hidden {
 	display: none;
 }
 

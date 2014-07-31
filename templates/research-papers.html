@@ -3,21 +3,25 @@
 <div id="controls">
 	<div id="search">
 		<h3>Search for Papers</h3>
-		<input class="title" type="text" name="title" placeholder="title"/>
-		<input class="keywords" type="text" name="keywords" placeholder="keywords"/>
-		<input class="adjectives" type="text" name="adjectives" placeholder="phronesis adjectives"/>
-		<input class="favorite" type="checkbox" name="favorite"/> Favorite
+		<div class="search-form">
+			<input class="title" type="text" name="title" placeholder="title"/>
+			<input class="keywords" type="text" name="keywords" placeholder="keywords"/>
+			<input class="adjectives" type="text" name="adjectives" placeholder="phronesis adjectives"/>
+			<input class="favorite" type="checkbox" name="favorite"/> Favorite
+		</div>
 	</div>
 	<div id="create">
 		<h3>Create New Paper</h3>
-		<input class="title" type="text" name="title" placeholder="title"/>
-		<input class="url" type="text" name="url" placeholder="url"/>
-		<input class="keywords" type="text" name="keywords" placeholder="keywords"/>
-		<input class="adjectives" type="text" name="adjectives" placeholder="phronesis adjectives"/>
-		<input class="note" type="text" name="note" placeholder="note"/>
-		<textarea class="abstract" type="text" name="abstract">Abstract</textarea>
-		<input class="favorite" type="checkbox" name="favorite"/>Favorite
-		<input type="submit"/>
+		<div class="create-form">
+			<input class="title" type="text" name="title" placeholder="title"/>
+			<input class="url" type="text" name="url" placeholder="url"/>
+			<input class="keywords" type="text" name="keywords" placeholder="keywords"/>
+			<input class="adjectives" type="text" name="adjectives" placeholder="phronesis adjectives"/>
+			<input class="note" type="text" name="note" placeholder="note"/>
+			<textarea class="abstract" type="text" name="abstract">Abstract</textarea>
+			<input class="favorite" type="checkbox" name="favorite"/>Favorite
+			<input type="submit"/>
+		</div>
 	</div>
 </div>
 <div id="papers"></div>

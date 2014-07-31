@@ -1,15 +1,33 @@
 <script id="research_paper_template" type="text/x-handlebars-template">
 	{{#each papers}}
-	<div class="paper">
-  		<a href="{{this.url}}" target="_blank">
-  			<h4>{{this.title}}</h4>
-  		</a>
-	  	<ul class="keywords">
-	  		{{#each this.keywords}}
-	  			<li class="keyword"> {{this}} </li>
-	  		{{/each}}
-	  	</ul>
-  		<p class="abstract">{{this.abstract}}</p>
+	<div id="{{this._id}}" class="paper">
+		<p class="edit">Edit</p>
+  		<div class="section">
+	  		<h5>Title</h5>
+	  		<a href="{{this.url}}" target="_blank">
+	  			<h4>{{this.title}}</h4>
+	  		</a>
+	  	</div>
+  		<div class="section keywords-list">
+  			<h5>Keywords</h5>
+		  	<ul class="keywords">
+		  		{{#each this.keywords}}
+		  			<li class="keyword"> {{this}} </li>
+		  		{{/each}}
+		  	</ul>
+		</div>
+		<div class="section adjectives-list">
+			<h5>Phronesis Adjectives</h5>
+			<ul class="adjectives">
+		  		{{#each this.adjectives}}
+		  			<li class="adjective"> {{this}} </li>
+		  		{{/each}}
+		  	</ul>
+		</div>
+		<div class="section abstract">
+			<h5>Abstract</h5>
+			<p class="abstract-text hidden">{{this.abstract}}</p>
+		</div>
   	</div>
   	{{/each}}
 </script>

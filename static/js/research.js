@@ -57,6 +57,20 @@ $(document).ready(function(){
       }
     })  
   })
+
+  $('.edit').on('click', function(){
+
+  })
+
+  $('body').on('click', '.abstract h5, #controls h3', function(ev){
+    var target = $(ev.target)
+
+    if (!(target.next().hasClass('hidden'))){
+      target.next().addClass('hidden')
+    } else {
+      target.next().removeClass('hidden')
+    }
+  })
 })
 
 function renderTemplates(template, papers){
