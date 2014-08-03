@@ -1,11 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
+<div id="brain_nav">
+	<ul class="horizontal-list">
+		<li class="active" id="exercises">Exercises</li>
+		<li id="games">Games</li>		
+	</ul>
+</div>
 <div id="controls">
-	<div id="create">
+	<div id="create" class="exercises">
 		<h3>Create New Exercise Record</h3>
 		<div class="create-form">
 			<input class="game" type="text" name="game" placeholder="game"/>
 			<input class="score" type="text" name="score" placeholder="score"/>
+			<input type="submit"/>
+		</div>
+	</div>
+	<div id="create_game" class="games hidden">
+		<h3>Create New Game</h3>
+		<div class="create-form">
+			<input class="game" type="text" name="game" placeholder="game"/>
+			<input class="platform" type="text" name="platform" placeholder="platform"/>
+			<input class="type" type="text" name="type" placeholder="type"/>
+			<input class="subtype" type="text" name="subtype" placeholder="subtype"/>
+			<input class="subtype-note" type="text" name="subtype-note" placeholder="subtype-note"/>			
 			<input type="submit"/>
 		</div>
 	</div>

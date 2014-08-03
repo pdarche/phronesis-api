@@ -451,14 +451,14 @@ class WithingsConnectHandler(BaseHandler, mixins.WithingsMixin):
 class BrainTrainingAPIHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
-		game = self.get_argument('')
-
-		# session.query(BrainTrainingGame)
-		self.write(json.dumps({"data": game}))
+		games = session.query(BrainTrainingGame).all()
+		games = [{'id': row.id, 'name': row.name} for row in games]
+		games = json.dumps({"data":games})
+		self.write(games)
 
 	@tornado.web.authenticated
 	def post(self):
-		game = self.get_argument('game_id')
+		game_id = self.get_argument('game_id')
 		score = self.get_argument('score')
 
 		training_record = BrainTrainingExercise(
@@ -469,8 +469,8 @@ class BrainTrainingAPIHandler(BaseHandler):
 
 		session.add(training_record)
 		session.commit()
-		self.write(200)
-		
+		self.write({"data": "success"})
+
 
 class BrainTrainingHandler(BaseHandler):
 	@tornado.web.authenticated

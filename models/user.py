@@ -46,13 +46,13 @@ class Service(Base):
 class ResearchPaper(Base):
     __tablename__ = 'research_papers'
 
-    id = Column(Integer, primary_key=True)
-    title = Column(String)
-    abstract = Column(Text)
-    url = Column(String)
-    favorite = Column(Boolean)
-    keywords = relationship("ResearchKeyword")
-    note = Column(Text)
+    id 			= Column(Integer, primary_key=True)
+    title 		= Column(String)
+    abstract 	= Column(Text)
+    url 		= Column(String)
+    favorite 	= Column(Boolean)
+    keywords 	= relationship("ResearchKeyword")
+    note 		= Column(Text)
     #relationship("ResearchPaperNote")
 
 
@@ -80,11 +80,11 @@ class BrainTrainingGame(Base):
 	__tablename__ = 'brain_training_games'
 
 	id 					= Column(Integer, primary_key=True)
-	name				= Column(String)
-	type 				= Column(String)
+	name				= Column(String, unique=True, nullable=False)
+	platform 			= Column(String, nullable=False)
+	type 				= Column(String, nullable=False)
 	subtype 			= Column(String)
 	subtype_description = Column(String)
-	platform 			= Column(String)
 
 
 class BrainTrainingExercise(Base):
