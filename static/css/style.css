@@ -11,17 +11,17 @@ li.active {
 	display: inline-block;
 }
 
-#controls, #papers, #brain_nav {
+#controls, #papers, #brain_nav, #research_nav {
 	width: 960px;
 	margin: 0px auto;
 }
 
 #search, #create {
-	position: relative;
+/*	position: relative;
 	display: inline-block;
 	width: 40%;
 	margin: 4%;
-	vertical-align: top;
+	vertical-align: top;*/
 }
 
 #papers {
@@ -93,7 +93,7 @@ textarea {
 	margin-bottom: 5px
 }
 
-#brain_nav li {
-	margin-left: 30px;
+#brain_nav li, #research_nav li {
+	margin-right: 30px;
 	padding: 10px
 }
