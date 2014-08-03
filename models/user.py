@@ -59,9 +59,9 @@ class ResearchPaper(Base):
 class ResearchKeyword(Base):
 	__tablename__ = 'research_keywords'
 
-	id = Column(Integer, primary_key=True)
-	parent_id = Column(Integer, ForeignKey('research_papers.id'))
-	keyword = Column(String)
+	id 			= Column(Integer, primary_key=True)
+	parent_id 	= Column(Integer, ForeignKey('research_papers.id'))
+	keyword 	= Column(String)
 
 
 # class ResearchNote(Base):
@@ -71,6 +71,42 @@ class ResearchKeyword(Base):
 # 	parent_id = Column(Integer, ForeignKey('research_papers.id'))
 # 	note = Column(String)
 
+
+#####################################
+#		Brain Training Models		#
+#####################################
+
+class BrainTrainingGame(Base):
+	__tablename__ = 'brain_training_games'
+
+	id 					= Column(Integer, primary_key=True)
+	name				= Column(String)
+	type 				= Column(String)
+	subtype 			= Column(String)
+	subtype_description = Column(String)
+	platform 			= Column(String)
+
+
+class BrainTrainingExercise(Base):
+	__tablename__ = 'brain_training_exercises'
+
+	id 			= Column(Integer, primary_key=True)
+	game_id 	= Column(Integer, ForeignKey("brain_training_games.id"))
+	timestamp 	= Column(DateTime(timezone=True))
+	score		= Column(Integer)
+
+
+#####################################
+#			Simulants Models		#
+#####################################
+class Stimulant(Base):
+	__tablename__ = 'stimulants'
+
+	id 			= Column(Integer, primary_key=True)
+	stimulant 	= Column(String)
+	timestamp 	= Column(DateTime(timezone=True))
+	amount		= Column(Integer)
+	unit		= Column(String)
 
 
 #####################################

@@ -447,9 +447,33 @@ class WithingsConnectHandler(BaseHandler, mixins.WithingsMixin):
 		self.write(json.dumps(user))
 		self.finish()
 
-# class CeleryHandler(tornado.web.RequestHandler):
-# 	def get(self):
-# 		add.delay(4,4)
-# 		self.write("testing")
+
+class BrainTrainingAPIHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		game = self.get_argument('')
+
+		# session.query(BrainTrainingGame)
+		self.write(json.dumps({"data": game}))
+
+	@tornado.web.authenticated
+	def post(self):
+		game = self.get_argument('game_id')
+		score = self.get_argument('score')
+
+		training_record = BrainTrainingExercise(
+				game_id 	= game_id,
+				timestamp 	= datetime.datetime.now(),
+				score 		= score
+			)
+
+		session.add(training_record)
+		session.commit()
+		self.write(200)
 		
+
+class BrainTrainingHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):		
+		self.render('brain-training.html')
 

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="controls">
+	<div id="create">
+		<h3>Create New Exercise Record</h3>
+		<div class="create-form">
+			<input class="game" type="text" name="game" placeholder="game"/>
+			<input class="score" type="text" name="score" placeholder="score"/>
+			<input type="submit"/>
+		</div>
+	</div>
+</div>
+<div id="brain_trainings"></div>
+<script type="text/javascript" src="{{ static_url("js/brain-training.js") }}"></script>
+<script type="text/html" src="{{ static_url("js/templates/papers.handlebars") }}"></script>
+{% end %}

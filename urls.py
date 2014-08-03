@@ -15,5 +15,7 @@ url_patterns = [
     (r"/connect/withings", handlers.WithingsConnectHandler),
     (r"/push/fitbit", handlers.FitbitSubscribeHandler),
     (r"/research", handlers.ResearchPaperHandler),
-    (r"/api/research", handlers.ResearchPaperAPIHandler)
+    (r"/api/research", handlers.ResearchPaperAPIHandler),
+    (r"/brain", handlers.BrainTrainingHandler),
+    (r"/api/brain", handlers.BrainTrainingAPIHandler)
 ]
