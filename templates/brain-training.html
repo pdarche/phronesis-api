@@ -27,7 +27,27 @@
 		</div>
 	</div>
 </div>
-<div id="brain_trainings"></div>
+<div id="brain_trainings">
+	<table>
+		<tr>
+			<th>Remove</th>
+			<th>Game</th>
+			<th>Platform</th>
+			<th>Type</th>
+			<th>Subtype</th>
+			<th>Description</th>			
+		</tr>
+			{% for game in games %}
+			<tr>
+				<td>{{ game[''] }}</td>
+				<td>{{ game[''] }}</td>
+				<td>{{ game[''] }}</td>
+				<td>{{ game[''] }}</td>
+				<td>{{ game[''] }}</td>
+			</tr>
+			{% end %}		
+	</table>
+</div>
 <script type="text/javascript" src="{{ static_url("js/brain-training.js") }}"></script>
 <script type="text/html" src="{{ static_url("js/templates/papers.handlebars") }}"></script>
 {% end %}
