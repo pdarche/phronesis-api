@@ -11,9 +11,11 @@ li.active {
 	display: inline-block;
 }
 
-#controls, #papers, #brain_nav, #research_nav {
+#controls, #papers, 
+#brain_nav, #research_nav,
+#brain_training_container {
 	width: 960px;
-	margin: 0px auto;
+	margin: 0px auto 20px auto;
 }
 
 #search, #create {
@@ -96,4 +98,13 @@ textarea {
 #brain_nav li, #research_nav li {
 	margin-right: 30px;
 	padding: 10px
+}
+
+#brain_training_container #games{
+	border-collapse: collapse;	
+}
+
+#brain_training_container #games td {
+	border: 1px solid gray;
+	padding: 5px;
 }

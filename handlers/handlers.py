@@ -471,9 +471,48 @@ class BrainTrainingAPIHandler(BaseHandler):
 		session.commit()
 		self.write({"data": "success"})
 
+	@tornado.web.authenticated
+	def delete(self):
+		game_id = self.get_argument('game_id')
+		
+		try:
+			session.query(BrainTrainingGame)\
+					.filter_by(id=game_id).delete()
+			session.commit()
+			print "sucessfully deleted"
+		except Exception, e:
+			session.rollback()
+			print "not sucessfully deleted %s" % e
+
+		self.write({"data": "success"})
+
+	@tornado.web.authenticated
+	def put(self):
+		update_dict = {}
+		game_id = self.get_argument('game_id')
+		update_key = self.get_argument('key')
+		update_value = self.get_argument('value')
+		update_dict[update_key] = update_value
+		
+		try:
+			session.query(BrainTrainingGame)\
+					.filter(BrainTrainingGame.id==game_id)\
+					.update(update_dict)
+			session.commit()
+		except:
+			session.rollback()
+		
+		self.write("success")
+
 
 class BrainTrainingHandler(BaseHandler):
 	@tornado.web.authenticated
-	def get(self):		
-		self.render('brain-training.html')
+	def get(self):
+		games = session.query(BrainTrainingGame).all()
+		games = [{"id":r.id, "name":r.name, "platform":r.platform,
+					"type":r.type, "subtype":r.subtype, 
+					"subtype_description":r.subtype_description} 
+						for r in games]
+
+		self.render('brain-training.html', games=games)
 

@@ -21,6 +21,7 @@ from tasks.tasks import import_moves
 
 from settings import settings
 from urls import url_patterns
+import ui_methods
 
 
 def update_fitbit():
@@ -35,7 +36,7 @@ def update_moves():
 
 class TornadoApplication(tornado.web.Application):
     def __init__(self):
-        tornado.web.Application.__init__(self, url_patterns, **settings)
+        tornado.web.Application.__init__(self, url_patterns, ui_methods=ui_methods, **settings)
 
 
 def main():
