@@ -448,7 +448,49 @@ class WithingsConnectHandler(BaseHandler, mixins.WithingsMixin):
 		self.finish()
 
 
-class BrainTrainingAPIHandler(BaseHandler):
+class BrainTrainingExerciseAPIHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		# excercises = [{'id': row.id, 'name': row.name} for row in games]
+		# excercises = json.dumps({"data":excercises})
+		# self.write(excercises)
+		# REFACTOR: I need to figure out how to do this for real
+		# I think there's an issue with the 
+		query = """SELECT * FROM brain_training_exercises 
+		    JOIN brain_training_games ON
+		    (brain_training_exercises.game_id = brain_training_games.id)
+		"""
+		exercises = engine.execute(query).fetchall()
+		exercises = [{
+			'id': row[0], 
+			'timestamp': row[2].strftime('%m/%d/%Y %H:%M'),
+			'name': row[5],
+			'platform': row[9]
+		} for row in exercises]
+		exercises = json.dumps({"data":exercises})
+		
+		self.write(exercises)
+
+	def post(self):
+		game_id = self.get_argument('game_id')
+		score = self.get_argument('score')
+
+		training_record = BrainTrainingExercise(
+				game_id 	= game_id,
+				timestamp 	= datetime.datetime.now(),
+				score 		= score
+			)
+
+		try: 
+			session.add(training_record)
+			session.commit()
+			self.write({"data": "Success"})
+		except:
+			session.rollback()
+			self.write({"data": "Internal Server Error"})
+
+
+class BrainTrainingGameAPIHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
 		games = session.query(BrainTrainingGame).all()
@@ -466,10 +508,14 @@ class BrainTrainingAPIHandler(BaseHandler):
 				timestamp 	= datetime.datetime.now(),
 				score 		= score
 			)
-
-		session.add(training_record)
-		session.commit()
-		self.write({"data": "success"})
+		try: 
+			session.add(training_record)
+			session.commit()
+			self.write({"data": "Success"})
+		except:
+			session.rollback()
+			self.write({"data": "Internal Server Error"})
+		
 
 	@tornado.web.authenticated
 	def delete(self):

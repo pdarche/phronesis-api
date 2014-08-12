@@ -17,5 +17,7 @@ url_patterns = [
     (r"/research", handlers.ResearchPaperHandler),
     (r"/api/research", handlers.ResearchPaperAPIHandler),
     (r"/brain", handlers.BrainTrainingHandler),
-    (r"/api/brain", handlers.BrainTrainingAPIHandler)
+    (r"/api/brain", handlers.BrainTrainingGameAPIHandler),
+    (r"/api/brain-games", handlers.BrainTrainingGameAPIHandler),
+    (r"/api/brain-exercises", handlers.BrainTrainingExerciseAPIHandler)
 ]
