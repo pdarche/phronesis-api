@@ -1,0 +1,22 @@
+<script id="brain_exercises_template" type="text/x-handlebars-template">
+	<table id="games">
+		<tr>
+			<th>Remove</th>
+			<th>Game</th>
+			<th>Platform</th>
+			<th>Type</th>
+			<th>Timestamp</th>
+			<th>Score</th>
+		</tr>
+		{{#each exercises}}
+			<tr class="{{ this.id }}">
+				<td class="remove">x</td>
+				<td class="name attribute">{{ this.name }}</td>
+				<td class="platform attribute">{{ this.platform }}</td>			
+				<td class="type attribute">{{ this.type }}</td>
+				<td class="timestamp attribute">{{ this.timestamp }}</td>
+				<td class="timestamp attribute">{{ this.score }}</td>	
+			</tr>
+		{{/each }}
+	</table>
+</script>
