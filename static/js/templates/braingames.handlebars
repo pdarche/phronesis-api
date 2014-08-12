@@ -1,4 +1,22 @@
 <script id="brain_games_template" type="text/x-handlebars-template">
-	{{#each games}}
-  	{{/each}}
+	<table id="games">
+		<tr>
+			<th>Remove</th>
+			<th>Game</th>
+			<th>Platform</th>
+			<th>Type</th>
+			<th>Subtype</th>
+			<th>Description</th>	
+		</tr>
+		{{#each games}}			
+			<tr class="{{ this.id }}">
+				<td class="remove">x</td>
+				<td class="name attribute">{{ this.name }}</td>
+				<td class="platform attribute">{{ this.platform }}</td>
+				<td class="type attribute">{{ this.type }}</td>
+				<td class="subtype attribute">{{ this.subtype }}</td>
+				<td class="subtype_description attribute">{{ this.subtype_description }}</td>
+			</tr>
+		{{/each }}		
+	</table>
 </script>

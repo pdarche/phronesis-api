@@ -451,9 +451,6 @@ class WithingsConnectHandler(BaseHandler, mixins.WithingsMixin):
 class BrainTrainingExerciseAPIHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
-		# excercises = [{'id': row.id, 'name': row.name} for row in games]
-		# excercises = json.dumps({"data":excercises})
-		# self.write(excercises)
 		# REFACTOR: I need to figure out how to do this for real
 		# I think there's an issue with the 
 		query = """SELECT * FROM brain_training_exercises 
@@ -465,7 +462,9 @@ class BrainTrainingExerciseAPIHandler(BaseHandler):
 			'id': row[0], 
 			'timestamp': row[2].strftime('%m/%d/%Y %H:%M'),
 			'name': row[5],
-			'platform': row[9]
+			'type': row[7],
+			'platform': row[9],
+			'score': row[3]
 		} for row in exercises]
 		exercises = json.dumps({"data":exercises})
 		
@@ -494,8 +493,11 @@ class BrainTrainingGameAPIHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
 		games = session.query(BrainTrainingGame).all()
-		games = [{'id': row.id, 'name': row.name} for row in games]
-		games = json.dumps({"data":games})
+		games = [{"id":r.id, "name":r.name, "platform":r.platform,
+					"type":r.type, "subtype":r.subtype, 
+					"subtype_description":r.subtype_description} 
+						for r in games]		
+		games = json.dumps({"data":games})						
 		self.write(games)
 
 	@tornado.web.authenticated

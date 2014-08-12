@@ -1,11 +1,31 @@
 $(document).ready(function(){
-  // var template
-  // $.get('/static/js/templates/papers.handlebars', function(data){
-  //   template = data
-  // })
+  var games, exercises
+
+  $.when(
+    $.get('/static/js/templates/braingames.handlebars'),
+    $.getJSON('/api/brain-games'),
+    $.get('/static/js/templates/brain-exercises.handlebars'),
+    $.getJSON('/api/brain-exercises')
+  ).done(function(tmpl1, gamesData, tmpl2, exerciseData){
+    games = tmpl1[0]
+    exercises = tmpl2[0]
+
+    renderTemplates(
+      exercises, 
+      exerciseData[0]['data'], 
+      'exercises'
+    )
+
+    renderTemplates(
+      games, 
+      gamesData[0]['data'], 
+      'games'
+    )
+  })
+
   var editing = false
 
-  $.getJSON('/api/brain',function(data){
+  $.getJSON('/api/brain-games',function(data){
     $('#create .game').autocomplete({
       source: _.map(data['data'],function(d){
         return {"label": d['name'], "value": d['id']}
@@ -21,11 +41,16 @@ $(document).ready(function(){
     active.removeClass('active')
     $this.addClass('active')
 
+    // toggle the controls
     $('#controls').children().hide()
     $('.'+attr).show()
+
+    // toggle the tables
+
+
   })
 
-  $('#games td:not(.remove)').on('click', function(ev){
+  $('#brain_training_container').on('click', 'td:not(.remove)', function(ev){
     $this = $(ev.target)
       , currVal = $this.html()
       , editor = '<input id="editor" type="text" value="' + currVal + '"/>'
@@ -44,7 +69,7 @@ $(document).ready(function(){
 
     if (removalConfirmed){
       $.ajax({      
-        url: '/api/brain?game_id=' + rowId,
+        url: '/api/brain-games?game_id=' + rowId,
         type: 'DELETE',
         success: function(){
           alert('success')
@@ -56,25 +81,6 @@ $(document).ready(function(){
       })
     }
   })
-
-  // $('.attribute').on('click', function(ev){
-  //   var $this = $(ev.target)
-  //     , rowId = $this.parent().attr('class')
-
-  //   if (removalConfirmed){
-  //     $.ajax({      
-  //       url: '/api/brain?game_id=' + rowId,
-  //       type: 'DELETE',
-  //       success: function(){
-  //         alert('success')
-  //         $this.parent().remove()
-  //       },
-  //       error: function(){
-  //         alert('error')
-  //       }
-  //     })
-  //   }
-  // })
 
   $('body').on('keypress', function(ev){
     var editor, key, value, rowId, data
@@ -93,7 +99,7 @@ $(document).ready(function(){
       }
 
       $.ajax({      
-        url: '/api/brain',
+        url: '/api/brain-games',
         type: 'PUT',
         data: data,
         error: function(){
@@ -101,7 +107,7 @@ $(document).ready(function(){
         }
       })
 
-      setText()        
+      setText()
     }
   })
 
@@ -118,7 +124,7 @@ $(document).ready(function(){
     }
 
     $.ajax({
-      url: '/api/brain',
+      url: '/api/brain-exercises',
       type: 'POST',
       data: data,
       success: function(){
@@ -145,13 +151,17 @@ $(document).ready(function(){
   // })
 })
 
-// function renderTemplates(template, papers){
-//   var source   = $(template).html();
-//   var tmpl     = Handlebars.compile(source);
-//   var html     = tmpl({"papers":papers})
+function renderTemplates(template, data, type){
+  var source   = $(template).html()
+    , tmpl     = Handlebars.compile(source)
+    , tmplData = {}
+    , html;
 
-//   $('#papers').html(html)
-// }
+    tmplData[type] = data
+    html           = tmpl(tmplData);
+
+  $('#brain_training_container').append(html)
+}
 
 function setText(){
   var editor = $('#editor')

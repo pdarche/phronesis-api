@@ -27,28 +27,9 @@
 		</div>
 	</div>
 </div>
-<div id="brain_training_container">
-	<table id="games">
-		<tr>
-			<th>Remove</th>
-			<th>Game</th>
-			<th>Platform</th>
-			<th>Type</th>
-			<th>Subtype</th>
-			<th>Description</th>		
-		</tr>
-			{% for game in games %}
-			<tr class="{{ game['id'] }}">
-				<td class="remove">x</td>
-				<td class="name attribute">{{ replace_none(game['name']) }}</td>
-				<td class="platform attribute">{{ replace_none(game['platform']) }}</td>
-				<td class="type attribute">{{ replace_none(game['type']) }}</td>
-				<td class="subtype attribute">{{ replace_none(game['subtype']) }}</td>
-				<td class="subtype_description attribute">{{ replace_none(game['subtype_description']) }}</td>
-			</tr>
-			{% end %}		
-	</table>
-</div>
+<div id="brain_training_container"></div>
+
 <script type="text/javascript" src="{{ static_url("js/brain-training.js") }}"></script>
-<script type="text/html" src="{{ static_url("js/templates/papers.handlebars") }}"></script>
+<script type="text/html" src="{{ static_url("js/templates/braingames.handlebars") }}"></script>
+<script type="text/html" src="{{ static_url("js/templates/brain-exercises.handlebars") }}"></script>
 {% end %}

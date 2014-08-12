@@ -74,9 +74,9 @@ $(document).ready(function(){
 })
 
 function renderTemplates(template, papers){
-  var source   = $(template).html();
-  var tmpl     = Handlebars.compile(source);
-  var html     = tmpl({"papers":papers})
+  var source   = $(template).html()
+    , tmpl     = Handlebars.compile(source)
+    , html     = tmpl({"papers":papers});
 
   $('#papers').html(html)
 }
