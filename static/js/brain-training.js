@@ -1,5 +1,6 @@
 $(document).ready(function(){
   var games, exercises
+    , editing = false
 
   $.when(
     $.get('/static/js/templates/braingames.handlebars'),
@@ -23,8 +24,6 @@ $(document).ready(function(){
     )
   })
 
-  var editing = false
-
   $.getJSON('/api/brain-games',function(data){
     $('#create .game').autocomplete({
       source: _.map(data['data'],function(d){
@@ -38,16 +37,13 @@ $(document).ready(function(){
       , active = $('.active')
       , attr = $this.attr('id')
 
+    $('ul .border').removeClass('border')
+    $this.addClass('border')
+
+    active.hide()
     active.removeClass('active')
-    $this.addClass('active')
-
-    // toggle the controls
-    $('#controls').children().hide()
+    $('.'+attr).addClass('active')
     $('.'+attr).show()
-
-    // toggle the tables
-
-
   })
 
   $('#brain_training_container').on('click', 'td:not(.remove)', function(ev){

@@ -2,7 +2,7 @@
 	padding: 0px;
 }
 
-li.active {
+.border {
 	border: 1px solid black;
 }
 
@@ -100,11 +100,12 @@ textarea {
 	padding: 10px
 }
 
-#brain_training_container #games{
-	border-collapse: collapse;	
+#brain_training_container .records-table {
+	border-collapse: collapse;
+	width: 100%;
 }
 
-#brain_training_container #games td {
+#brain_training_container .records-table td {
 	border: 1px solid gray;
 	padding: 5px;
 }

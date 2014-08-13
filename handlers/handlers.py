@@ -97,11 +97,10 @@ class ResearchPaperHandler(BaseHandler):
 
 class ResearchPaperAPIHandler(BaseHandler):
 	def get(self):
-		key = self.get_argument('param_name')
-		value = self.get_argument('value')
-		favorite = self.get_argument('favorite')
+		key 		= self.get_argument('param_name')
+		value 		= self.get_argument('value')
+		favorite 	= self.get_argument('favorite')
 
-		print value
 		search_val = re.compile(".*%s.*" % value, re.IGNORECASE)
 		# query = {"favorite": favorite}
 		query = {}
