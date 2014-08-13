@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="controls">
+	<div id="create" class="stimulants">
+		<h3>Create Stimulant Record</h3>
+		<div class="create-form">
+			<input class="stimulant" type="text" name="stimulant" placeholder="stimulant"/>
+			<input class="amount" type="text" name="amount" placeholder="amount"/>
+			<input class="unit" type="text" name="unit" placeholder="unit"/>
+			<input type="submit"/>
+		</div>
+	</div>
+</div>
+<div id="record_container"></div>
+
+<script type="text/javascript" src="{{ static_url("js/stimulants.js") }}"></script>
+{% end %}

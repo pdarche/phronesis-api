@@ -105,7 +105,7 @@ class Stimulant(Base):
 	id 			= Column(Integer, primary_key=True)
 	stimulant 	= Column(String)
 	timestamp 	= Column(DateTime(timezone=True))
-	amount		= Column(Integer)
+	quantity	= Column(Integer)
 	unit		= Column(String)
 
 

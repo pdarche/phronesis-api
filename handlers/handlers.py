@@ -557,9 +557,45 @@ class BrainTrainingHandler(BaseHandler):
 	def get(self):
 		games = session.query(BrainTrainingGame).all()
 		games = [{"id":r.id, "name":r.name, "platform":r.platform,
-					"type":r.type, "subtype":r.subtype, 
-					"subtype_description":r.subtype_description} 
-						for r in games]
+				"type":r.type, "subtype":r.subtype, 
+				"subtype_description":r.subtype_description} 
+					for r in games]
 
 		self.render('brain-training.html', games=games)
+
+
+class StimulantAPIHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		stimulants = session.query(Stimulant).all()
+		self.write("success")
+
+	def post(self):
+		stimulant_name = self.get_argument('stimulant')
+		quantity = int(self.get_argument('amount'))
+		unit = self.get_argument('unit')
+
+		stimulant = Stimulant(
+				stimulant 	= stimulant_name,
+				timestamp 	= datetime.datetime.now(),
+				quantity 	= quantity,
+				unit		= unit
+			)
+		try:
+			session.add(stimulant)
+			session.commit()
+			self.write({"data": "Success"})
+		except Exception, e:
+			print e.message
+			session.rollback()
+			self.write({"data": "Internal Server Error"})
+
+
+class StimulantHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		self.render('stimulants.html')
+
+
+
 
