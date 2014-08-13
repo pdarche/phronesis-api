@@ -566,8 +566,7 @@ class BrainTrainingHandler(BaseHandler):
 
 class StimulantAPIHandler(BaseHandler):
 	@tornado.web.authenticated
-	def get(self):
-		stimulants = session.query(Stimulant).all()
+	def get(self):		
 		self.write("success")
 
 	def post(self):
@@ -594,7 +593,11 @@ class StimulantAPIHandler(BaseHandler):
 class StimulantHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
-		self.render('stimulants.html')
+		stimulants = session.query(Stimulant).all()
+		stimulants = [{"id":r.id, "stimulant": r.stimulant, 
+						"timestamp": r.timestamp, "quantity": r.quantity,
+						"unit": r.unit} for r in stimulants]		
+		self.render('stimulants.html', stimulants=stimulants)
 
 
 
