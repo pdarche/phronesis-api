@@ -2,8 +2,8 @@
 {% block content %}
 <div id="research_nav">
 	<ul class="horizontal-list">
-		<li class="active" id="search">search</li>
-		<li id="create">create</li>		
+		<li class="search active border">search</li>
+		<li class="create">create</li>		
 	</ul>
 </div>
 <div id="controls">
@@ -16,7 +16,7 @@
 			<input class="favorite" type="checkbox" name="favorite"/> Favorite
 		</div>
 	</div>
-	<div id="create">
+	<div id="create" class="hidden">
 		<h3>Create New Paper</h3>
 		<div class="create-form">
 			<input class="title" type="text" name="title" placeholder="title"/>

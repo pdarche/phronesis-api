@@ -600,7 +600,7 @@ class StimulantHandler(BaseHandler):
 		stimulants = session.query(Stimulant).all()
 		stimulants = [{"id":r.id, "stimulant": r.stimulant,
 						"timestamp": r.timestamp, "quantity": r.quantity,
-						"unit": r.unit} for r in stimulants]		
+						"unit": r.unit} for r in stimulants]	
 		self.render('stimulants.html', stimulants=stimulants)
 
 

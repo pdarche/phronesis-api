@@ -4,6 +4,23 @@ $(document).ready(function(){
     template = data
   })
 
+  $('#research_nav').on('click', 'li', function(ev){
+    var $this = $(ev.target)
+      , active = $('.active')
+      , targetAttr = $this.attr('class').split(' ')[0]
+      , currAttr = active.attr('class').split(' ')[0]
+    
+    $('#' + currAttr).hide()
+    $('#' + targetAttr).show()
+
+    active.removeClass('border')
+          .removeClass('active')
+
+    $this.addClass('active')
+         .addClass('border')
+    
+  })
+
   $('#search input').keyup(function(){
     var el = $(this)
       , param = el.attr('name') 
