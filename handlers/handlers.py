@@ -9,6 +9,7 @@ import time
 import datetime
 import copy
 import re
+import pandas as pd
 
 from bson import objectid
 from bson import json_util
@@ -571,15 +572,17 @@ class StimulantAPIHandler(BaseHandler):
 
 	def post(self):
 		stimulant_name = self.get_argument('stimulant')
-		quantity = int(self.get_argument('amount'))
-		unit = self.get_argument('unit')
+		quantity 	   = int(self.get_argument('amount'))
+		unit 	  	   = self.get_argument('unit')
+		timestamp 	   = self.get_argument('timestamp')
+		timestamp 	   = pd.to_datetime(timestamp)
 
 		stimulant = Stimulant(
-				stimulant 	= stimulant_name,
-				timestamp 	= datetime.datetime.now(),
-				quantity 	= quantity,
-				unit		= unit
-			)
+			stimulant = stimulant_name,
+			timestamp = timestamp,
+			quantity  = quantity,
+			unit	  = unit
+		)
 		try:
 			session.add(stimulant)
 			session.commit()
@@ -594,7 +597,7 @@ class StimulantHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
 		stimulants = session.query(Stimulant).all()
-		stimulants = [{"id":r.id, "stimulant": r.stimulant, 
+		stimulants = [{"id":r.id, "stimulant": r.stimulant,
 						"timestamp": r.timestamp, "quantity": r.quantity,
 						"unit": r.unit} for r in stimulants]		
 		self.render('stimulants.html', stimulants=stimulants)

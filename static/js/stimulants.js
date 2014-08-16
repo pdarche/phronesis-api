@@ -7,15 +7,16 @@ $(document).ready(function(){
       , stimulant = el.find('.stimulant').val()
       , amount    = el.find('.amount').val()
       , unit      = el.find('.unit').val()
+      , timestamp = el.find('.datetime').val()
       , data;
 
     data = {
       'stimulant' : stimulant,
       'amount'    : amount,
-      'unit'      : unit,
+      'unit'      : unit, 
+      'timestamp' : timestamp
     }
 
-    console.log("posting")
 
     $.ajax({
       url: '/api/stimulants',
@@ -27,19 +28,8 @@ $(document).ready(function(){
       error: function(){
         alert('error')
       }
-    })  
+    })
   })
-
-
-  // $('body').on('click', '.abstract h5, #controls h3', function(ev){
-  //   var target = $(ev.target)
-
-  //   if (!(target.next().hasClass('hidden'))){
-  //     target.next().addClass('hidden')
-  //   } else {
-  //     target.next().removeClass('hidden')
-  //   }
-  // })
 })
 
 function renderTemplates(template, papers){
