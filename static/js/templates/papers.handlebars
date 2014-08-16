@@ -10,17 +10,23 @@
 	  	</div>
   		<div class="section keywords-list">
   			<h5>Keywords</h5>
-		  	<ul class="keywords">
+		  	<ul class="keywords tag-list">
 		  		{{#each this.keywords}}
-		  			<li class="keyword"> {{this}} </li>
+		  			<li class="keyword">
+		  				<span>{{this}}</span>
+		  				<span class="remove hidden">x</span>
+		  			</li>
 		  		{{/each}}
 		  	</ul>
 		</div>
 		<div class="section adjectives-list">
 			<h5>Phronesis Adjectives</h5>
-			<ul class="adjectives">
+			<ul class="adjectives tag-list">
 		  		{{#each this.adjectives}}
-		  			<li class="adjective"> {{this}} </li>
+		  			<li class="adjective">
+		  				<span>{{this}}</span>
+		  				<span class="remove hidden">x</span>
+		  			</li>
 		  		{{/each}}
 		  	</ul>
 		</div>

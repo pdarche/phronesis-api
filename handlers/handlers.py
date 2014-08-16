@@ -11,7 +11,7 @@ import copy
 import re
 import pandas as pd
 
-from bson import objectid
+from bson import ObjectId
 from bson import json_util
 from passlib.apps import custom_app_context as pwd_context
 
@@ -155,6 +155,23 @@ class ResearchPaperAPIHandler(BaseHandler):
 		# )
 		# session.add(paper)
 		# session.commit()
+
+	@tornado.web.authenticated
+	def delete(self):
+		paper_id  = self.get_argument('paper_id')
+		tag_type  = self.get_argument('tag_type')
+		tag_value = self.get_argument('tag_value')
+		pull_dict = {}
+		pull_dict[str(tag_type)] = str(tag_value)
+
+		try:
+			db.papers.update(
+				{'_id': ObjectId(paper_id)}, 
+				{"$pull": pull_dict}
+			)
+			self.write({"data":"Success"})
+		except:
+			self.write({"data": "Something went wrong"})
 
 	def conver_obj_id(self, doc):
 		doc['_id'] = str(doc['_id'])

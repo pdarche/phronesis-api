@@ -47,7 +47,7 @@
 }
 
 .paper li {
-	/*border: 1px solid gray;*/
+	border: 1px solid gray;
 	border-radius: 5px;
 	display: inline-block;
 	font-size: 12px;
@@ -82,6 +82,10 @@
 
 .hidden {
 	display: none;
+}
+
+.remove:hover{
+	cursor: pointer;
 }
 
 input[type='text'] {

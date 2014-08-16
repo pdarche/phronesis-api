@@ -5,10 +5,10 @@ $(document).ready(function(){
   })
 
   $('#research_nav').on('click', 'li', function(ev){
-    var $this = $(ev.target)
-      , active = $('.active')
-      , targetAttr = $this.attr('class').split(' ')[0]
-      , currAttr = active.attr('class').split(' ')[0]
+    var $this       = $(ev.target)
+      , active      = $('.active')
+      , targetAttr  = $this.attr('class').split(' ')[0]
+      , currAttr    = active.attr('class').split(' ')[0]
     
     $('#' + currAttr).hide()
     $('#' + targetAttr).show()
@@ -18,7 +18,42 @@ $(document).ready(function(){
 
     $this.addClass('active')
          .addClass('border')
-    
+  })
+
+  $('#papers').on('mouseenter', '.tag-list li', function(ev){
+    var $this = $(ev.target)
+
+    $this.find('.remove').show()
+
+  }).on('mouseleave', '.tag-list li', function(ev){
+    var $this = $(ev.target)
+
+    $this.find('.remove').hide()
+
+  })
+
+  $('#papers').on('click', '.remove', function(ev){
+    var $this   = $(ev.target)
+      , paperId = $this.closest('.paper').attr('id')
+      , tagVal  = $this.prev().html()
+      , tagType = $this.closest('.tag-list')
+                        .attr('class').split(' ')[0]
+      , params
+
+      params = 'paper_id=' + paperId + '&'
+      params += 'tag_value=' + tagVal + '&'
+      params += 'tag_type=' + tagType
+
+    $.ajax({
+      type: "DELETE",
+      url: "/api/research?" + params,
+      success: function(){
+        $this.parent().remove()
+      },
+      error: function(){
+        alert('error')
+      }
+    });
   })
 
   $('#search input').keyup(function(){
