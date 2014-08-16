@@ -13,7 +13,8 @@
 
 #controls, #papers, 
 #brain_nav, #research_nav,
-#brain_training_container {
+#brain_training_container,
+#record_container {
 	width: 960px;
 	margin: 0px auto 20px auto;
 }
@@ -100,12 +101,12 @@ textarea {
 	padding: 10px
 }
 
-#brain_training_container .records-table {
+.records-table {
 	border-collapse: collapse;
 	width: 100%;
 }
 
-#brain_training_container .records-table td {
+.records-table td {
 	border: 1px solid gray;
 	padding: 5px;
 }

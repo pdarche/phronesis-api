@@ -568,8 +568,9 @@ class BrainTrainingHandler(BaseHandler):
 class StimulantAPIHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):		
-		self.write("success")
+		self.write("success")	
 
+	@tornado.web.authenticated		
 	def post(self):
 		stimulant_name = self.get_argument('stimulant')
 		quantity 	   = int(self.get_argument('amount'))

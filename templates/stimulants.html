@@ -12,7 +12,26 @@
 		</div>
 	</div>
 </div>
-<div id="record_container"></div>
+<div id="record_container">
+	<table class="records-table stimulants" id="stimulants">
+		<tr>
+			<th>Remove</th>
+			<th>Name</th>
+			<th>Quantity</th>
+			<th>Unit</th>
+			<th>Timestamp</th>
+		</tr>
+		{% for s in stimulants %}			
+			<tr class="{{ s['id'] }}">
+				<td class="remove">x</td>
+				<td class="name attribute">{{ s['stimulant'] }}</td>
+				<td class="quantity attribute">{{ s['quantity'] }}</td>
+				<td class="unit attribute">{{ s['unit'] }}</td>
+				<td class="timestamp attribute">{{ s['timestamp'] }}</td>
+			</tr>
+		{% end %}		
+	</table>
+</div>
 
 <script type="text/javascript" src="{{ static_url("js/stimulants.js") }}"></script>
 {% end %}

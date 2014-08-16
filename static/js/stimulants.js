@@ -16,8 +16,7 @@ $(document).ready(function(){
       'unit'      : unit, 
       'timestamp' : timestamp
     }
-
-
+    
     $.ajax({
       url: '/api/stimulants',
       type: 'POST',
