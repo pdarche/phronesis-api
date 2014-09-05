@@ -1,0 +1,8 @@
+<script id="foods_template" type="text/x-handlebars-template">
+	{{#each foods}}
+		<div class="food" draggable="true">
+			<img src="https://farm{{this.farm}}.staticflickr.com/{{this.server}}/{{this.id}}_{{this.secret}}.jpg"/>
+			<p>{{ this.dates.taken }}</p>
+		</div>
+  	{{/each}}
+</script>

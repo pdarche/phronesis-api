@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="foods_munge_container">
+	<div id="flickr_photos">
+		<h1>Flickr Food Photos</h1>
+		<div id="food_photos_container"></div>
+	</div>
+	<div id="fitbit_foods">
+		<h1>Fitbit Logged Foods</h1>
+	</div>
+</div>
+
+<script type="text/javascript" src="{{ static_url("js/foods-munge.js") }}"></script>
+<script type="text/html" src="{{ static_url("js/templates/foods-munge.handlebars") }}"></script>
+{% end %}
