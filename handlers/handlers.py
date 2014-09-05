@@ -27,12 +27,18 @@ from sqlalchemy.orm import sessionmaker
 # Mongo
 client = MongoClient('localhost', 27017)
 db = client.phronesis_research_papers
+foods_db = client.phronesis_food_photos
 
 # SQL Alchemy
 engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
+def conver_obj_id(doc):
+	doc['_id'] = str(doc['_id'])
+
+	return doc
 
 class BaseHandler(tornado.web.RequestHandler):
 	def get_current_user(self):
@@ -108,7 +114,7 @@ class ResearchPaperAPIHandler(BaseHandler):
 		query[str(key)] = search_val
 
 		papers = db.papers.find(query)
-		papers = [self.conver_obj_id(doc) for doc in list(papers)]
+		papers = [conver_obj_id(doc) for doc in list(papers)]
 		self.write(json.dumps({"data": papers}))
 
 		# sqlAlchem version
@@ -173,10 +179,6 @@ class ResearchPaperAPIHandler(BaseHandler):
 		except:
 			self.write({"data": "Something went wrong"})
 
-	def conver_obj_id(self, doc):
-		doc['_id'] = str(doc['_id'])
-
-		return doc
 
 class FitbitSubscribeHandler(BaseHandler):
 	def post(self):
@@ -619,6 +621,27 @@ class StimulantHandler(BaseHandler):
 						"timestamp": r.timestamp, "quantity": r.quantity,
 						"unit": r.unit} for r in stimulants]	
 		self.render('stimulants.html', stimulants=stimulants)
+
+
+class FoodsHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		self.render('foods.html')
+
+
+class FoodsAPIHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		# offset = self.get_argument('page')
+		food_photos = foods_db.photos.find().limit(1000)\
+						.sort("dates.taken", pymongo.DESCENDING)
+		food_photos = [conver_obj_id(doc) for doc \
+						in list(food_photos)]
+		food_photos = json.dumps(food_photos)
+		self.write(food_photos)
+
+
+
 
 
 
