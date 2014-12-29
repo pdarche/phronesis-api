@@ -385,10 +385,6 @@ class FitbitFetchActivities(FitbitFetchResource):
 
 ##### CELERY TASKS #####
 @celery.task
-def add(x, y):
-    return x + y
-
-@celery.task
 def celtest(collectionType, date):
 	dates = [date]
 

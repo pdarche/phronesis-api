@@ -1,15 +1,18 @@
+from settings import settings
+
 import tornado.web
 import tornado.gen
+
 import requests
 import json
-from settings import settings
-from pymongo import MongoClient
-import pymongo
 import time
 import datetime
 import copy
 import re
 import pandas as pd
+
+import pymongo
+from pymongo import MongoClient
 
 from bson import ObjectId
 from bson import json_util
@@ -26,7 +29,7 @@ from sqlalchemy.orm import sessionmaker
 
 # Mongo
 client = MongoClient('localhost', 27017)
-db = client.phronesis_research_papers
+db = client.phronesis_dev
 foods_db = client.phronesis_food_photos
 
 # SQL Alchemy
@@ -42,7 +45,12 @@ def conver_obj_id(doc):
 
 class BaseHandler(tornado.web.RequestHandler):
 	def get_current_user(self):
-		return self.get_secure_cookie("username")
+		return self.get_secure_cookie("user")
+
+	def build_response(self, code, type):
+		if code == 200:
+			res = {'code': 200, 'message':message, 'data': data}
+			return json.dumps(res)
 
 
 class MainHandler(BaseHandler):
@@ -68,10 +76,11 @@ class SignupHandler(tornado.web.RequestHandler):
 			newuser = User(email_address=email, password=hashed_pwd)
 			session.add(newuser)
 			session.commit()
+			self.set_secure_cookie("user", email)
 			response = {'response':200, 'data':'signed up!'}
 		else:
 			response = {'response':400, 'data':'That email is already registered'}
-		
+
 		self.write(json.dumps(response))
 
 
@@ -87,7 +96,7 @@ class LoginHandler(tornado.web.RequestHandler):
 		elif not verify:
 			response = {'response':413, 'data': 'unauthorized'}
 		else:
-			self.set_secure_cookie("username", email)
+			self.set_secure_cookie("user", email)
 			response = {'response':200, 'data':'logged in'}
 
 		self.write(response)
@@ -115,16 +124,8 @@ class ResearchPaperAPIHandler(BaseHandler):
 
 		papers = db.papers.find(query)
 		papers = [conver_obj_id(doc) for doc in list(papers)]
+
 		self.write(json.dumps({"data": papers}))
-
-		# sqlAlchem version
-		# documents = session.query(ResearchPaper, ResearchKeyword) \
-		# 	.filter(or_(ResearchPaper.title.contains(title),
-		# 			ResearchKeyword.keyword.contains(keyword))).all()
-
-		# docs = map(lambda d: {"title": d.title}, documents)
-		
-		# self.write(json.dumps(docs))
 
 	def post(self):
 		title = self.get_argument('title')
@@ -148,19 +149,6 @@ class ResearchPaperAPIHandler(BaseHandler):
 
 		db.papers.insert(data)
 		self.write({'status':200})
-		# SQL Alchemy Version
-		# keywords = [kw.strip() for kw in keywords.split(',')]
-		
-		# paper = ResearchPaper(
-		# 	title=title,
-		# 	abstract=abstract,
-		# 	url=url,
-		# 	favorite=favorite,
-		# 	keywords=[ResearchKeyword(keyword=kw) for kw in keywords],
-		# 	note=note
-		# )
-		# session.add(paper)
-		# session.commit()
 
 	@tornado.web.authenticated
 	def delete(self):
@@ -172,7 +160,7 @@ class ResearchPaperAPIHandler(BaseHandler):
 
 		try:
 			db.papers.update(
-				{'_id': ObjectId(paper_id)}, 
+				{'_id': ObjectId(paper_id)},
 				{"$pull": pull_dict}
 			)
 			self.write({"data":"Success"})
@@ -187,15 +175,15 @@ class FitbitSubscribeHandler(BaseHandler):
 			for body in json.loads(update['body']):
 				# db.fitbit_test.insert(body)
 				celtest.delay(body['collectionType'], body['date'])
-		
+
 		self.set_status(204)
 
 
-class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin): 
+class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin):
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	def get(self):
-		user_email = self.get_secure_cookie("username")
+		user_email = self.get_secure_cookie("user")
 		user = session.query(User).filter_by(email_address=user_email).first()
 
 		if self.get_argument('oauth_token', None):
@@ -211,10 +199,10 @@ class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin):
 			self.clear_all_cookies()
 			raise tornado.web.HTTPError(500, 'Fitbit authentication failed')
 
-		curr_user = self.get_secure_cookie("username")
+		curr_user = self.get_secure_cookie("user")
 
 		print "the incoming fitbit user is %r" % user
-		
+
 		self.fitbit_request(
 			'/user/-/apiSubscriptions/1',
 			access_token= user['access_token'],
@@ -234,20 +222,20 @@ class FitbitConnectHandler(BaseHandler, mixins.FitbitMixin):
 		if not response:
 			self.clear_all_cookies()
 			raise tornado.web.HTTPError(500, "Couldn't retrieve user information")
-		
+
 		self.write(response)
 		self.finish()
 
 
-class FitbitImportHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
+class FitbitImportHandler(BaseHandler, mixins.FitbitMixin):
 	@tornado.web.asynchronous
 	@tornado.gen.engine
 	def get(self):
-		curr_user = self.get_secure_cookie("username")
+		curr_user = self.get_secure_cookie("user")
 		curr_user = db.users.find_one({"username":curr_user})
 
 		# import_fitbit.delay(curr_user["fitbit"]["access_token"])
-		
+
 		response = yield tornado.gen.Task(
 			self.fitbit_request,
 			'/user/-/foods/log/date/2013-11-10',
@@ -260,18 +248,20 @@ class FitbitImportHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
 		self.finish()
 
 
-class FitbitPushHandler(tornado.web.RequestHandler, mixins.FitbitMixin):
+class FitbitPushHandler(BaseHandler, mixins.FitbitMixin):
 	def post(self):
 		print 'got some stuff %r' % self.request
 
 
 
-class MovesConnectHandler(tornado.web.RequestHandler, mixins.MovesMixin):
+class MovesConnectHandler(BaseHandler, mixins.MovesMixin):
+    # @tornado.web.authenticated
     @tornado.web.asynchronous
     def get(self):
-    	# if the user already has a moves 
+    	# PLACEHOLDER: if the user already has a moves
     	# account connected, don't create a record
 		if self.get_argument("code", False):
+			# TODO: use co-routines instead of callback
 			self.get_authenticated_user(
 			    redirect_uri='http://localhost:8080/connect/moves',
 			    client_id=settings["moves_client_id"],
@@ -288,28 +278,19 @@ class MovesConnectHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 			response_type="code"
 		)
 
-    def _on_login(self, moves_user):
-		user_email = self.get_secure_cookie("username")
+    def _on_login(self, moves_profile):
+		user_email = self.get_secure_cookie("user")
 		user = session.query(User).filter_by(email_address=user_email).first()
+		moves_profile['phro_user_id'] = user.id
+		moves_profile['phro_user_email'] = user.email_address
 
-		moves_service = Service(
-			parent_id=user.id,
-			name='moves',
-			identifier=moves_user['userId'],
-			start_date=moves_user['profile']['firstDate'],
-			access_secret=moves_user['access_token']['access_token'],
-			token_type=moves_user['access_token']['token_type'],
-			token_expiration=moves_user['access_token']['expires_in'],
-			refresh_token=moves_user['access_token']['refresh_token'],
-			timezone=moves_user['profile']['currentTimeZone']['id'],
-			utc_offset=moves_user['profile']['currentTimeZone']['offset']
-		)
-		session.add(moves_service)
-		session.commit()
+		try:
+			# PLACEHOLDER: Celery task to import the users data from Moves
+			db.profiles.insert(moves_profile)
+			self.write(json.dumps({"code":200, "data": "success"}))
+		except:
+			self.write(json.dumps({"code":500, "data": "Internal server error"}))
 
-		# Celery task to import the users data from Moves
-
-		self.write(json.dumps({"response":200, "data": "success"}))
 		self.finish()
 
 
@@ -323,11 +304,11 @@ class MovesTestHandler(tornado.web.RequestHandler):
 class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 	@tornado.web.asynchronous
 	def get(self):
-		user_email = self.get_secure_cookie("username")
+		user_email = self.get_secure_cookie("user")
 		user = session.query(User) \
 					.filter_by(email_address=user_email).first()
 		date = self.get_argument('date')
-		
+
 		# if the user doesn't have a Moves account
 		# redirect them to the moves connect
 		user_moves = session.query(Service) \
@@ -413,32 +394,11 @@ class MovesStorylineHandler(tornado.web.RequestHandler, mixins.MovesMixin):
 			)
 
 
-
-# class MovesImportHandler(tornado.web.RequestHandler, mixins.MovesMixin):
-# 	@tornado.web.asynchronous
-# 	def get(self):
-# 		curr_user = self.get_secure_cookie("username")
-# 		curr_user = db.users.find_one({"username":curr_user})
-# 		access_token = curr_user["moves"]["access_token"]["access_token"]
-
-# 		self.moves_request(
-# 		    path="/user/storyline/daily/201310",
-# 		    callback=self._on_data,
-# 		    access_token=access_token,
-# 		    args={"trackPoints": "true"}
-# 		)
-
-# 	def _on_data(self, data):
-
-# 		self.write(json.dumps(data))
-# 		self.finish()
-
-
 class WithingsConnectHandler(BaseHandler, mixins.WithingsMixin):
 	# @tornado.web.authenticated
 	@tornado.web.asynchronous
 	def get(self):
-		curr_user = self.get_secure_cookie("username")
+		curr_user = self.get_secure_cookie("user")
 		curr_user = db.user.find_one({"username":curr_user})
 
 		if self.get_argument('oauth_token', None):
@@ -454,7 +414,7 @@ class WithingsConnectHandler(BaseHandler, mixins.WithingsMixin):
 			self.clear_all_cookies()
 			raise tornado.web.HTTPError(500, 'Withings authentication failed')
 
-		curr_user = self.get_secure_cookie("username")
+		curr_user = self.get_secure_cookie("user")
 		db.users.update({"username":curr_user}, {'$set': {"fitbit": user}})
 
 
@@ -471,14 +431,14 @@ class BrainTrainingExerciseAPIHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
 		# REFACTOR: I need to figure out how to do this for real
-		# I think there's an issue with the 
-		query = """SELECT * FROM brain_training_exercises 
+		# I think there's an issue with the
+		query = """SELECT * FROM brain_training_exercises
 		    JOIN brain_training_games ON
 		    (brain_training_exercises.game_id = brain_training_games.id)
 		"""
 		exercises = engine.execute(query).fetchall()
 		exercises = [{
-			'id': row[0], 
+			'id': row[0],
 			'timestamp': row[2].strftime('%m/%d/%Y %H:%M'),
 			'name': row[5],
 			'type': row[7],
@@ -486,7 +446,7 @@ class BrainTrainingExerciseAPIHandler(BaseHandler):
 			'score': row[3]
 		} for row in exercises]
 		exercises = json.dumps({"data":exercises})
-		
+
 		self.write(exercises)
 
 	def post(self):
@@ -499,7 +459,7 @@ class BrainTrainingExerciseAPIHandler(BaseHandler):
 				score 		= score
 			)
 
-		try: 
+		try:
 			session.add(training_record)
 			session.commit()
 			self.write({"data": "Success"})
@@ -513,10 +473,10 @@ class BrainTrainingGameAPIHandler(BaseHandler):
 	def get(self):
 		games = session.query(BrainTrainingGame).all()
 		games = [{"id":r.id, "name":r.name, "platform":r.platform,
-					"type":r.type, "subtype":r.subtype, 
-					"subtype_description":r.subtype_description} 
-						for r in games]		
-		games = json.dumps({"data":games})						
+					"type":r.type, "subtype":r.subtype,
+					"subtype_description":r.subtype_description}
+						for r in games]
+		games = json.dumps({"data":games})
 		self.write(games)
 
 	@tornado.web.authenticated
@@ -529,19 +489,19 @@ class BrainTrainingGameAPIHandler(BaseHandler):
 				timestamp 	= datetime.datetime.now(),
 				score 		= score
 			)
-		try: 
+		try:
 			session.add(training_record)
 			session.commit()
 			self.write({"data": "Success"})
 		except:
 			session.rollback()
 			self.write({"data": "Internal Server Error"})
-		
+
 
 	@tornado.web.authenticated
 	def delete(self):
 		game_id = self.get_argument('game_id')
-		
+
 		try:
 			session.query(BrainTrainingGame)\
 					.filter_by(id=game_id).delete()
@@ -560,7 +520,7 @@ class BrainTrainingGameAPIHandler(BaseHandler):
 		update_key = self.get_argument('key')
 		update_value = self.get_argument('value')
 		update_dict[update_key] = update_value
-		
+
 		try:
 			session.query(BrainTrainingGame)\
 					.filter(BrainTrainingGame.id==game_id)\
@@ -568,7 +528,7 @@ class BrainTrainingGameAPIHandler(BaseHandler):
 			session.commit()
 		except:
 			session.rollback()
-		
+
 		self.write("success")
 
 
@@ -577,8 +537,8 @@ class BrainTrainingHandler(BaseHandler):
 	def get(self):
 		games = session.query(BrainTrainingGame).all()
 		games = [{"id":r.id, "name":r.name, "platform":r.platform,
-				"type":r.type, "subtype":r.subtype, 
-				"subtype_description":r.subtype_description} 
+				"type":r.type, "subtype":r.subtype,
+				"subtype_description":r.subtype_description}
 					for r in games]
 
 		self.render('brain-training.html', games=games)
@@ -586,10 +546,10 @@ class BrainTrainingHandler(BaseHandler):
 
 class StimulantAPIHandler(BaseHandler):
 	@tornado.web.authenticated
-	def get(self):		
-		self.write("success")	
+	def get(self):
+		self.write("success")
 
-	@tornado.web.authenticated		
+	@tornado.web.authenticated
 	def post(self):
 		stimulant_name = self.get_argument('stimulant')
 		quantity 	   = int(self.get_argument('amount'))
@@ -619,7 +579,7 @@ class StimulantHandler(BaseHandler):
 		stimulants = session.query(Stimulant).all()
 		stimulants = [{"id":r.id, "stimulant": r.stimulant,
 						"timestamp": r.timestamp, "quantity": r.quantity,
-						"unit": r.unit} for r in stimulants]	
+						"unit": r.unit} for r in stimulants]
 		self.render('stimulants.html', stimulants=stimulants)
 
 
