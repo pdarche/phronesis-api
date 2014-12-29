@@ -20,10 +20,8 @@ from sqlalchemy.orm import sessionmaker
 from models.user import *
 
 engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
-
 Session = sessionmaker(bind=engine)
 session = Session()
-
 celery = Celery('tasks', broker='amqp://guest@localhost//')
 
 class FitbitFetchResource(object):
@@ -50,10 +48,10 @@ class FitbitFetchResource(object):
 
 			table -- resource table name string
 		"""
-		try: 
-			sql = """SELECT timestamp::date FROM %s 
+		try:
+			sql = """SELECT timestamp::date FROM %s
 						ORDER BY timestamp::date LIMIT 1""" % table
-			self.cursor.execute(sql)			
+			self.cursor.execute(sql)
 			last_record_date = self.cursor.fetchone()
 
 			if last_record_date is None:
@@ -85,7 +83,7 @@ class FitbitFetchFood(FitbitFetchResource):
 		if type(food) == dict:
 			mealTypeId = food['loggedFood']['mealTypeId']
 			meal = self.mealTypeMapping[str(mealTypeId)]
-		    
+
 			return {
 			    'favorite': food['isFavorite'],
 			    'timestamp': food['logDate'],
@@ -106,23 +104,23 @@ class FitbitFetchFood(FitbitFetchResource):
 		else:
 			return {
 			    'favorite': None, 'timestamp': food, 'amount': 0,
-			    'brand': None, 'calories': 0,'mealTypeId': 0, 
+			    'brand': None, 'calories': 0,'mealTypeId': 0,
 			    'meal': None,'name': None, 'unit': None, 'total_calories': 0,
 			    'carbs': 0, 'fat': 0, 'fiber':  0, 'protein': 0,'sodium':  0
 			}
 
 	def fitbit_foods(self, dates):
 	    """ fetches the food records for a list of dates
-	    and returns a Pandas DataFrame with 
+	    and returns a Pandas DataFrame with
 	    a food record for each logged food
-	    
+
 	    dates -- list of date strings in the format %Y-%m-%d
 	    """
-	    
+
 	    f = fitbit.FitBit()
 	    token = 'oauth_token_secret=%s&oauth_token=%s' % \
 	        (settings['fitbit_access_secret'], settings['fitbit_access_key'])
-	    
+
 	    records = []
 	    for date in dates:
 			print "fetching date %s" % date
@@ -149,18 +147,18 @@ class FitbitFetchFood(FitbitFetchResource):
 	    """
 	    for row in records:
 	        values = (
-	            row['amount'], row['brand'], row['calories'], 
+	            row['amount'], row['brand'], row['calories'],
 	            row['carbs'], row['fat'], row['favorite'],
-	            row['fiber'], row['meal'], row['mealTypeId'], 
-	            row['name'], row['protein'], row['sodium'], 
+	            row['fiber'], row['meal'], row['mealTypeId'],
+	            row['name'], row['protein'], row['sodium'],
 	            row['timestamp'], row['total_calories'], row['unit']
-	        ) 
-	        sql = """INSERT INTO fitbit_food 
-	                (amount, brand, calories, 
-	                carbs, fat, favorite, fiber, 
-	                meal, meal_type_id, name, protein, 
-	                sodium, timestamp, total_calories, unit) 
-	                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 
+	        )
+	        sql = """INSERT INTO fitbit_food
+	                (amount, brand, calories,
+	                carbs, fat, favorite, fiber,
+	                meal, meal_type_id, name, protein,
+	                sodium, timestamp, total_calories, unit)
+	                VALUES (%s, %s, %s, %s, %s, %s, %s, %s,
 	                %s, %s, %s, %s, %s, %s, %s)"""
 	        self.cursor.execute(sql, values)
 	        self.conn.commit()
@@ -169,9 +167,9 @@ class FitbitFetchFood(FitbitFetchResource):
 	def foods_processor(self, dates):
 		""" takes an update record from the FitBit
 			subscription post, deletes the records
-			for the date of update for resources 
-			of the given type, fetches the given 
-			resource for the given day from the 
+			for the date of update for resources
+			of the given type, fetches the given
+			resource for the given day from the
 			FitBit api and then inserts the resulting
 			records into the db
 
@@ -192,21 +190,15 @@ class FitbitFetchSleep(FitbitFetchResource):
 	def __init__(self):
 		super(FitbitFetchSleep, self).__init__()
 
-	# def delete_fitbit_records(self, table, dates):
-	#     for date in dates:
-	#         sql = "DELETE FROM %s WHERE timestamp::date = '%s'" % (table, date)
-	#         self.cursor.execute(sql)
-	#         self.conn.commit()
-
-	def flatten_sleep(self, sleep):		
-		if type(sleep) == dict:			
+	def flatten_sleep(self, sleep):
+		if type(sleep) == dict:
 			sleep_rec = sleep
 			del sleep_rec['minuteData']
 			sleep_rec['startTime'] = pd.to_datetime(sleep_rec['startTime'])
 			sleep_rec['timestamp'] = pd.to_datetime(sleep_rec['startTime'])
 		else:
 			sleep_rec = {
-				'logId': None, 'isMainSleep': None, 'minutesToFallAsleep': None, 'awakeningsCount': None, 
+				'logId': None, 'isMainSleep': None, 'minutesToFallAsleep': None, 'awakeningsCount': None,
 				'minutesAwake': None, 'timeInBed': None, 'minutesAsleep': None,
 				'awakeDuration': None, 'efficiency': None, 'startTime': pd.to_datetime(sleep),
 				'restlessCount': 11, 'duration': None, 'restlessDuration': None,
@@ -217,8 +209,8 @@ class FitbitFetchSleep(FitbitFetchResource):
 
 	def fitbit_sleeps(self, dates):
 		""" fetches the sleep records for a list of dates
-		and returns a Pandas DataFrame with 
-		a food record for each logged food 
+		and returns a Pandas DataFrame with
+		a food record for each logged food
 
 		dates -- list of date strings in the format %Y-%m-%d
 		"""
@@ -251,25 +243,25 @@ class FitbitFetchSleep(FitbitFetchResource):
 	    records into the database
 
 	    records -- dictionary of Fitbt sleep records
-	    """	
+	    """
 	    for row in records:
 	        values = (
-	            row['awakeCount'], row['awakeDuration'], 
-	            row['awakeningsCount'], row['duration'], 
-	            row['efficiency'], row['isMainSleep'], 
-	            row['logId'], row['minutesAfterWakeup'], 
-	            row['minutesAsleep'], row['minutesAwake'], 
-	            row['minutesToFallAsleep'], row['restlessCount'], 
-	            row['restlessDuration'], row['startTime'], 
+	            row['awakeCount'], row['awakeDuration'],
+	            row['awakeningsCount'], row['duration'],
+	            row['efficiency'], row['isMainSleep'],
+	            row['logId'], row['minutesAfterWakeup'],
+	            row['minutesAsleep'], row['minutesAwake'],
+	            row['minutesToFallAsleep'], row['restlessCount'],
+	            row['restlessDuration'], row['startTime'],
 	            row['timeInBed'], row['timestamp']
-	        ) 
-	        sql = """INSERT INTO fitbit_sleep 
-	                (awake_count, awake_duration, awakenings_count, 
-	                duration, efficiency, is_main_sleep, log_id, 
+	        )
+	        sql = """INSERT INTO fitbit_sleep
+	                (awake_count, awake_duration, awakenings_count,
+	                duration, efficiency, is_main_sleep, log_id,
 	                minutes_after_wakeup, minutes_asleep, minutes_awake,
 	                minutes_to_fall_asleep, restless_count,
-	                restless_duration, start_time, time_in_bed, timestamp) 
-	                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 
+	                restless_duration, start_time, time_in_bed, timestamp)
+	                VALUES (%s, %s, %s, %s, %s, %s, %s, %s,
 	                %s, %s, %s, %s, %s, %s, %s, %s)"""
 	        self.cursor.execute(sql, values)
 	        self.conn.commit()
@@ -277,9 +269,9 @@ class FitbitFetchSleep(FitbitFetchResource):
 	def sleep_processor(self, dates):
 		""" takes an update record from the FitBit
 			subscription post, deletes the records
-			for the date of update for resources 
-			of the given type, fetches the given 
-			resource for the given day from the 
+			for the date of update for resources
+			of the given type, fetches the given
+			resource for the given day from the
 			FitBit api and then inserts the resulting
 			records into the db
 
@@ -295,7 +287,7 @@ class FitbitFetchSleep(FitbitFetchResource):
 		self.insert_fitbit_sleep_records(sleep_records)
 
 ## NOTE: flattend activity will probably be a problem
-## cuz it doesn't take into account other 
+## cuz it doesn't take into account other
 ## logged activities
 
 class FitbitFetchActivities(FitbitFetchResource):
@@ -316,8 +308,8 @@ class FitbitFetchActivities(FitbitFetchResource):
 
 	def fitbit_activities(self, dates):
 		""" fetches the activity records for a list of dates
-		and returns a Pandas DataFrame with 
-		a food record for each logged food 
+		and returns a Pandas DataFrame with
+		a food record for each logged food
 
 		dates -- list of date strings in the format %Y-%m-%d
 		"""
@@ -332,7 +324,7 @@ class FitbitFetchActivities(FitbitFetchResource):
 			try:
 				activities = f.ApiCall(token, apiCall='/1/user/-/activities/date/%s.json' % date)
 				activities = json.loads(activities)
-				activities['summary']['timestamp'] = pd.to_datetime(date)	        
+				activities['summary']['timestamp'] = pd.to_datetime(date)
 				records.append(activities['summary'])
 			except:
 				notify_pete('fitbit activities error')
@@ -350,22 +342,22 @@ class FitbitFetchActivities(FitbitFetchResource):
 	    """
 	    for row in records:
 	        values = (
-	            row['activeScore'], row['activityCalories'], 
-	            row['caloriesBMR'], row['caloriesOut'], 
+	            row['activeScore'], row['activityCalories'],
+	            row['caloriesBMR'], row['caloriesOut'],
 	            row['distance'], row['elevation'],
-	            row['floors'], row['marginalCalories'], 
-	            row['lightlyActiveMinutes'], row['fairlyActiveMinutes'], 
+	            row['floors'], row['marginalCalories'],
+	            row['lightlyActiveMinutes'], row['fairlyActiveMinutes'],
 	            row['sedentaryMinutes'], row['veryActiveMinutes'],
 	            row['steps'], row['timestamp']
-	        ) 
+	        )
 	        sql = """INSERT INTO fitbit_activity
-	                (active_score, activity_calories, 
+	                (active_score, activity_calories,
 	                calories_bmr, calories_out, distance,
 	                elevation, floors, marginal_calories,
 	                minutes_lightly_active, minutes_fairly_active,
 	                minutes_sedentary, minutes_very_active,
 	                steps, timestamp)
-	                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 
+	                VALUES (%s, %s, %s, %s, %s, %s, %s, %s,
 	                %s, %s, %s, %s, %s, %s)"""
 	        self.cursor.execute(sql, values)
 	        self.conn.commit()
@@ -374,15 +366,15 @@ class FitbitFetchActivities(FitbitFetchResource):
 	def activities_processor(self, dates):
 		""" takes an update record from the FitBit
 			subscription post, deletes the records
-			for the date of update for resources 
-			of the given type, fetches the given 
-			resource for the given day from the 
+			for the date of update for resources
+			of the given type, fetches the given
+			resource for the given day from the
 			FitBit api and then inserts the resulting
 			records into the db
 
 			update -- an update dict from the FitBit Api
 
-		"""	
+		"""
 		# delete the activity records for the given date
 		self.delete_fitbit_records('fitbit_activity', dates)
 		# create the food records for the given date
@@ -422,7 +414,7 @@ def import_fitbit(offset):
 	fb = fitbit.FitBit()
 	token = 'oauth_token_secret=%s&oauth_token=%s' % \
 		(settings['fitbit_access_secret'], settings['fitbit_access_key'])
-    
+
 	user = json.loads(fb.ApiCall(token, apiCall='/1/user/-/profile.json'))
 	signup_date = pd.to_datetime(user['user']['memberSince'])
 
@@ -431,12 +423,12 @@ def import_fitbit(offset):
 	base_date_food = f.find_first_record_date('fitbit_food')
 	base_date_activity = f.find_first_record_date('fitbit_activity')
 	base_date_sleep = f.find_first_record_date('fitbit_sleep')
-	
+
 	food_dates = f.date_range(base_date_food, offset)
 	activity_dates = f.date_range(base_date_activity, offset)
 	sleep_dates = f.date_range(base_date_sleep, offset)
 
-	# if the signupdate is creater than the 
+	# if the signupdate is creater than the
 	# last fetch the resources in the date range
 	if pd.to_datetime(base_date_food) > signup_date:
 		print "fetching foods!"
@@ -449,7 +441,7 @@ def import_fitbit(offset):
 		print "fetching activities!"
 		activities = FitbitFetchActivities()
 		activities.activities_processor(activity_dates)
-	else:	
+	else:
 		notify_pete('Fitbit activities import complete')
 
 	if pd.to_datetime(base_date_sleep) > signup_date:
@@ -460,7 +452,7 @@ def import_fitbit(offset):
 		notify_pete('Fitbit sleep import complete')
 
 	time.sleep(.25)
-	return "success!"	
+	return "success!"
 
 
 @celery.task
@@ -468,11 +460,11 @@ def import_moves():
 	m = MovesStoryline()
 	moves_service = session.query(Service).filter_by(name='moves', parent_id=1).first()
 	access_token = moves_service.access_secret
-	
+
 	Moves = moves.MovesClient(settings['moves_client_id'], settings['moves_client_secret'])
 	Moves.access_token = access_token
 
-	# if the date is none, find the earliest date with data 
+	# if the date is none, find the earliest date with data
 	# if that date is greater than the signup date, fetch the moves data for the day
 	start_date = session.query(MovesSegment) \
 		    .filter_by(parent_id=1) \
@@ -556,6 +548,6 @@ class MovesStoryline():
 				activity = activity['activity'],
 				duration = activity['duration'],
 				end_time = activity['endTime']
-			)	
+			)
 
 

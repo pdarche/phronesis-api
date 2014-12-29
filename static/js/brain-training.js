@@ -105,7 +105,7 @@ $(document).ready(function(){
 
       setText()
     }
-  })
+  });
 
   $("#create input[type='submit']").on('click', function(ev){
     ev.preventDefault()
