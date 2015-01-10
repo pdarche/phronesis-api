@@ -28,10 +28,10 @@ moves_profile = db.profiles.find_one({"phro_user_email": user.email_address})
 moves = mvs.MovesClient(access_token=moves_profile['access_token']['access_token'])
 
 # NOTE: the Moves API ratelimits at 60 requirest/hour and 2000 requests/day
-
 def update_access_token():
 	""" Updates the Phronesis users Moves access token """
-	return
+	pass
+
 
 def fetch_summary(date=None):
 	""" Fetches a user's Moves summary for a given date """
