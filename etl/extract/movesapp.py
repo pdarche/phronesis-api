@@ -1,24 +1,19 @@
-"""
-	Module for extracting Moves data for a
+""" Module for extracting Moves data for a
 	Phronesis user
 """
-# Standard Lib
+
 import datetime
-# MongoDB
+
 from pymongo import MongoClient
-# SQL Alchemy
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
-# Moves python wrapper
 import moves as mvs
-# Phronesis User model
+
 from models.user import *
 
-# Mongo
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
 
-# SQL Alchemy
 engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -58,5 +53,7 @@ def fetch_places(date=None):
 
 	resource_path = 'user/places/daily/%s' % date
 	return moves.api(resource_path, 'GET').json()
+
+
 
 
