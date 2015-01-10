@@ -24,9 +24,10 @@ moves_profile = db.profiles.find_one({"phro_user_email": user.email_address})
 moves = mvs.MovesClient(access_token=moves_profile['access_token']['access_token'])
 
 # TODO: NEED to understand Moves' subscription to know how to handle updating
+# NOTE: Moves API documentation: https://dev.moves-app.com/docs/api_summaries
 # NOTE: MOVES API stores datetimes as UTC
 # NOTE: the Moves API ratelimits at 60 requirest/hour and 2000 requests/day
-def next_records(profile, record_type):
+def next_import_date_range(profile, record_type):
 	""" Finds the date range of the records to backfill
 
 	Args:
@@ -40,22 +41,30 @@ def next_records(profile, record_type):
 
 	join_date = datetime.datetime.strptime(profile['firstDate'], '%Y%m%d')
 	# TODO: thinkg about localization strategy
-	last_import_record = db.moves.find({'record_type': 'summary'})
+	last_import_record = db.moves.find({'record_type': 'summary'})\
 									.sort('last_update', 1).limit(1)[0]
-	last_import_datetime = dateutil.parser.parse(last_record['last_update'])
-	start_date = last_import_datetime - datetime.timedelta(31)
+	start_date = last_import_record['last_update'] - datetime.timedelta(31)
 
 	if start_date < join_date:
 		start_date = join_date
 
 	range_info = {
 		'start_date': start_date.strftime('%Y%m%d'),
-		'end_date': last_import_datetime.strftime('%Y%m%d'),
-		'last_update': last_import_datetime.strftime('%H%M%S'),
+		'end_date': last_import_record['last_update'].strftime('%Y%m%d'),
+		'last_update': last_import_record['last_update'].strftime('%H%M%S'),
 		'timezone': 'UTC'
 	}
 
-	return dates
+	return range_info
+
+
+def missing_dates():
+	""" Finds any dates missing between today and Moves
+	join date for a record type (summary, activity, etc.)
+
+	"""
+	pass
+
 
 def update_access_token():
 	""" Updates the Phronesis users Moves access token """
