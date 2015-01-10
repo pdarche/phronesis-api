@@ -56,4 +56,62 @@ def fetch_places(date=None):
 
 
 
+# TODO: Review and remove! This is depracated and won't be used in the future.
+class MovesStoryline():
+	""" Class for importing Moves storyline data """
+	def _on_data(self, data):
+		storyline = data[0]
+		self.insert_segments(storyline['segments'])
+
+	def insert_segments(self, segments):
+		segment_objects = [self.create_moves_segment(s) \
+							for s in segments]
+		for obj in segment_objects:
+			session.add(obj)
+		session.commit()
+
+	def create_moves_segment(self, segment):
+		return MovesSegment(
+				parent_id = 1, # NOTE: this will have to change!
+				type = segment['type'],
+				start_time = segment['startTime'],
+				end_time = segment['endTime'],
+				last_update = segment['lastUpdate'],
+				place = self.create_moves_place(segment['place']) \
+					if segment.has_key('place') else None,
+				activities = self.create_moves_activities(segment['activities']) \
+					if segment.has_key('activities') else []
+			)
+
+	def create_moves_place(self, place):
+		return MovesPlace(
+				type = place['type'],
+				place_id = place['id'],
+				lat = place['location']['lat'],
+				lon = place['location']['lon']
+			)
+
+	def create_moves_activities(self, activities):
+		return [self.create_moves_activity(activity) \
+					for activity in activities]
+
+	def create_moves_activity(self, activity):
+		return MovesActivity(
+				distance =  activity['distance'],
+				group = activity['group'],
+				trackpoints = self.create_moves_trackpoints(activity['trackPoints']) \
+					if activity.has_key('trackPoints') else [],
+				calories = activity['calories'] \
+					if activity.has_key('calories')	else None,
+				manual = activity['manual'],
+				steps = activity['steps'] \
+					if activity.has_key('steps') else None,
+				start_time = activity['startTime'],
+				activity = activity['activity'],
+				duration = activity['duration'],
+				end_time = activity['endTime']
+			)
+
+
+
 

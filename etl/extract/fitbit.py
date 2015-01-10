@@ -8,6 +8,7 @@ engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/p
 Session = sessionmaker(bind=engine)
 session = Session()
 
+# TODO: Review and remove! This is depracated and won't be used in the future.
 class FitbitFetchResource(object):
 	def __init__(self):
 		# self.conn_string = "host='localhost' dbname='postgres' user='pete' password='Morgortbort1!'"

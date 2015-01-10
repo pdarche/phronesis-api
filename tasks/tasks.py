@@ -1,17 +1,13 @@
 import json
 import datetime
 import time
-import itertools
 
-import tornado.web
-import tornado.gen
-import mixins.mixins as mixins
-import psycopg2
 import celery as clry
 import pandas as pd
 import requests
 import fitbit
 import moves
+
 # TODO: refactor import *
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
@@ -72,21 +68,21 @@ def import_fitbit(offset):
 		foods = FitbitFetchFood()
 		foods.foods_processor(food_dates)
 	else:
-		notify_pete('Fitbit food import complete')
+		pass
 
 	if pd.to_datetime(base_date_activity) > signup_date:
 		print "fetching activities!"
 		activities = FitbitFetchActivities()
 		activities.activities_processor(activity_dates)
 	else:
-		notify_pete('Fitbit activities import complete')
+		pass
 
 	if pd.to_datetime(base_date_sleep) > signup_date:
 		print "fetching sleeps!"
 		sleep = FitbitFetchSleep()
 		sleep.sleep_processor(sleep_dates)
 	else:
-		notify_pete('Fitbit sleep import complete')
+		pass
 
 	time.sleep(.25)
 	return "success!"
@@ -111,8 +107,6 @@ def import_moves():
 	dates = [(start_date - datetime.timedelta(days=offset)) \
 				.strftime('%Y%m%d') for offset in range(1,50)]
 
-	print start_date
-
 	for date in dates:
 		request_url = 'user/storyline/daily/%s' % date
 		data = Moves.api(request_url, 'GET', params={'access_token': access_token}).json()
@@ -121,70 +115,3 @@ def import_moves():
 		time.sleep(.25)
 
 	return "suceess"
-
-
-def notify_pete(notification):
-	return requests.post(
-		settings['mailgun_post_url'],
-		auth=("api", settings['mailgun_api_key']),
-		data={"from": "Pete <pdarche@gmail.com>",
-			"to": ["pdarche@gmail.com"],
-			"subject": "%s" % notification,
-			"text": "%s"  % notification})
-
-
-class MovesStoryline():
-	def _on_data(self, data):
-		storyline = data[0]
-		self.insert_segments(storyline['segments'])
-
-	def insert_segments(self, segments):
-		segment_objects = [self.create_moves_segment(s) \
-							for s in segments]
-		for obj in segment_objects:
-			session.add(obj)
-		session.commit()
-
-	def create_moves_segment(self, segment):
-		return MovesSegment(
-				parent_id = 1, # NOTE: this will have to change!
-				type = segment['type'],
-				start_time = segment['startTime'],
-				end_time = segment['endTime'],
-				last_update = segment['lastUpdate'],
-				place = self.create_moves_place(segment['place']) \
-					if segment.has_key('place') else None,
-				activities = self.create_moves_activities(segment['activities']) \
-					if segment.has_key('activities') else []
-			)
-
-	def create_moves_place(self, place):
-		return MovesPlace(
-				type = place['type'],
-				place_id = place['id'],
-				lat = place['location']['lat'],
-				lon = place['location']['lon']
-			)
-
-	def create_moves_activities(self, activities):
-		return [self.create_moves_activity(activity) \
-					for activity in activities]
-
-	def create_moves_activity(self, activity):
-		return MovesActivity(
-				distance =  activity['distance'],
-				group = activity['group'],
-				trackpoints = self.create_moves_trackpoints(activity['trackPoints']) \
-					if activity.has_key('trackPoints') else [],
-				calories = activity['calories'] \
-					if activity.has_key('calories')	else None,
-				manual = activity['manual'],
-				steps = activity['steps'] \
-					if activity.has_key('steps') else None,
-				start_time = activity['startTime'],
-				activity = activity['activity'],
-				duration = activity['duration'],
-				end_time = activity['endTime']
-			)
-
-
