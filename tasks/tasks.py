@@ -22,6 +22,15 @@ celery = clry.Celery('tasks', broker='amqp://guest@localhost//')
 
 
 @celery.task
+def etl_manager():
+	""" Executes service etl management functions
+	for services that need to be backfilled and
+	for services who don't offer subscribe functionality
+	"""
+	pass
+
+
+@celery.task
 def celtest(collectionType, date):
 	dates = [date]
 

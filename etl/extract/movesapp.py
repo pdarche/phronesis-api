@@ -3,6 +3,7 @@
 """
 
 import datetime
+import dateutil.parser
 
 from pymongo import MongoClient
 from sqlalchemy import *
@@ -22,18 +23,52 @@ user = session.query(User).filter_by(email_address='pdarche@gmail.com').first()
 moves_profile = db.profiles.find_one({"phro_user_email": user.email_address})
 moves = mvs.MovesClient(access_token=moves_profile['access_token']['access_token'])
 
+# TODO: NEED to understand Moves' subscription to know how to handle updating
+# NOTE: MOVES API stores datetimes as UTC
 # NOTE: the Moves API ratelimits at 60 requirest/hour and 2000 requests/day
+def next_records(profile, record_type):
+	""" Finds the date range of the records to backfill
+
+	Args:
+		profile: Dict of the Phronesis user's Moves profile.
+		record_type: String of the type of record to pull
+
+	Returns:
+		range_info: Dict of the start, end, update time, and timezone
+		of the resources to be fetched
+	"""
+
+	join_date = datetime.datetime.strptime(profile['firstDate'], '%Y%m%d')
+	# TODO: thinkg about localization strategy
+	last_import_record = db.moves.find({'record_type': 'summary'})
+									.sort('last_update', 1).limit(1)[0]
+	last_import_datetime = dateutil.parser.parse(last_record['last_update'])
+	start_date = last_import_datetime - datetime.timedelta(31)
+
+	if start_date < join_date:
+		start_date = join_date
+
+	range_info = {
+		'start_date': start_date.strftime('%Y%m%d'),
+		'end_date': last_import_datetime.strftime('%Y%m%d'),
+		'last_update': last_import_datetime.strftime('%H%M%S'),
+		'timezone': 'UTC'
+	}
+
+	return dates
+
 def update_access_token():
 	""" Updates the Phronesis users Moves access token """
 	pass
 
 
-def fetch_summary(date=None):
-	""" Fetches a user's Moves summary for a given date """
-	if not date:
-		date = datetime.datetime.today().strftime('%Y%m%d')
+def fetch_summary(start_date, end_date, update_since=None):
+	""" Fetches a user's Moves summary for a given date range"""
+	resource_path = 'user/summary/daily?from=%s&to=%s' % (start_date, end_date)
 
-	resource_path = 'user/summary/daily/%s' % date
+	if update_since:
+		resource_path = "%s?updateSince=T%sZ" % (resource_path, update_since)
+
 	return moves.api(resource_path, 'GET').json()
 
 
