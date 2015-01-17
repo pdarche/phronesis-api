@@ -97,6 +97,12 @@ def fetch_resource(resource, start_date, end_date, update_since=None):
     return resources
 
 
+def insert_resources(profile, resources):
+    """ inserts raw Moves resources into the staging database """
+    pass
+
+
+
 # TODO: Review and remove! This is depracated and won't be used in the future.
 class MovesStoryline():
     """ Class for importing Moves storyline data """
