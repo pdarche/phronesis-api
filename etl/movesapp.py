@@ -53,7 +53,10 @@ def next_import_date_range(profile, record_type):
         end_date = today
         last_update = datetime.datetime.now()
 
-    if start_date < join_date:
+    if start_date == join_date:
+        return None
+
+    elif start_date < join_date:
         start_date = join_date
 
     range_info = {

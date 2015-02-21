@@ -5,16 +5,15 @@ import datetime
 import copy
 import re
 
-import pandas as pd
-import tornado.web
-import tornado.gen
-import pymongo
-from pymongo import MongoClient
 from bson import ObjectId
 from bson import json_util
+import pandas as pd
 from passlib.apps import custom_app_context as pwd_context
+import pymongo
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
+import tornado.web
+import tornado.gen
 
 from settings import settings
 from models.user import *
@@ -22,7 +21,7 @@ import mixins.mixins as mixins
 from tasks.tasks import celtest
 from tasks.tasks import import_moves
 
-client = MongoClient('localhost', 27017)
+client = pymongo.MongoClient('localhost', 27017)
 db = client.phronesis_dev
 foods_db = client.phronesis_food_photos
 
@@ -65,7 +64,7 @@ class SignupHandler(tornado.web.RequestHandler):
 		curr_users = session.query(User).filter_by(email_address=email).count()
 		print curr_users
 
-		if curr_users != 1:
+		if not curr_users:
 			newuser = User(email_address=email, password=hashed_pwd)
 			session.add(newuser)
 			session.commit()
@@ -276,9 +275,9 @@ class MovesConnectHandler(BaseHandler, mixins.MovesMixin):
 		user = session.query(User).filter_by(email_address=user_email).first()
 		moves_profile['phro_user_id'] = user.id
 		moves_profile['phro_user_email'] = user.email_address
+		moves_profile['service'] = "moves"
 
 		try:
-			# PLACEHOLDER: Celery task to import the users data from Moves
 			db.profiles.insert(moves_profile)
 			self.write(json.dumps({"code":200, "data": "success"}))
 		except:
