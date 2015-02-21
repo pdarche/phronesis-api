@@ -1,38 +1,31 @@
-from settings import settings
-
-import tornado.web
-import tornado.gen
-
 import requests
 import json
 import time
 import datetime
 import copy
 import re
-import pandas as pd
 
+import pandas as pd
+import tornado.web
+import tornado.gen
 import pymongo
 from pymongo import MongoClient
-
 from bson import ObjectId
 from bson import json_util
 from passlib.apps import custom_app_context as pwd_context
-
-from models.user import *
-import mixins.mixins as mixins
-
-from tasks.tasks import celtest
-from tasks.tasks import import_moves
-
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
 
-# Mongo
+from settings import settings
+from models.user import *
+import mixins.mixins as mixins
+from tasks.tasks import celtest
+from tasks.tasks import import_moves
+
 client = MongoClient('localhost', 27017)
 db = client.phronesis_dev
 foods_db = client.phronesis_food_photos
 
-# SQL Alchemy
 engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
 Session = sessionmaker(bind=engine)
 session = Session()
