@@ -3,9 +3,9 @@
 import datetime
 import dateutil.parser
 
-import pymongo
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
+import pymongo
 import moves as mvs
 
 from models.user import *
@@ -26,7 +26,8 @@ moves = mvs.MovesClient(access_token=moves_profile['access_token']['access_token
 # NOTE: MOVES API stores datetimes as UTC
 # NOTE: the Moves API ratelimits at 60 requirest/hour and 2000 requests/day
 def next_import_date_range(profile, record_type):
-    """ Finds the date range of the records to backfill
+    """ Creates a 30-day range for the records to fetch based
+    on the earliest date in the db.
 
     Args:
         profile: Dict of the Phronesis user's Moves profile.
@@ -67,7 +68,7 @@ def next_import_date_range(profile, record_type):
 
 def missing_dates():
     """ Finds any dates missing between today and Moves
-    join date for a record type (summary, activity, etc.)
+    join date for a record type (summary, activity, etc.).
     """
     # fetch covered date ranges
     # fetch the dates between today and the signup date
@@ -75,7 +76,7 @@ def missing_dates():
 
 
 def update_access_token():
-    """ Updates the Phronesis users Moves access token """
+    """ Updates the Phronesis users Moves access token. """
     pass
 
 
@@ -140,9 +141,9 @@ def insert_resources(transformed_resources):
     return res
 
 
-def update_resource(record_type, profile):
+def update_resource(record_type, profile, update_info):
     """ Updates records for a given moves record type. """
-    update_info = next_import_date_range(profile['profile'], record_type)
+    # update_info = next_import_date_range(profile['profile'], record_type)
     resources = fetch_resource(
                     record_type,
                     update_info['start_date'],
