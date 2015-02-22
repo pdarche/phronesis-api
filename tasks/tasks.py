@@ -6,15 +6,14 @@ import celery as clry
 import pandas as pd
 import requests
 import fitbit
-import moves
 # TODO: refactor import *
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
+
+from settings import settings
 # TODO: refactor import *
 from models.user import *
-from settings import settings
-
-import manager
+import etl.movesapp as moves
 
 engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
 Session = sessionmaker(bind=engine)
@@ -61,7 +60,7 @@ def backfill_moves_resources(profile):
 
     for resource_type in resource_types:
     	# this should also be a celery subtask
-    	movesapp.backfill_resource_type(profile, resource_type)
+    	moves.backfill_resource_type(profile, resource_type)
 
 
 @celery.task
@@ -140,32 +139,3 @@ def import_fitbit(offset):
 
 	time.sleep(.25)
 	return "success!"
-
-
-@celery.task
-def import_moves():
-	m = MovesStoryline()
-	moves_service = session.query(Service).filter_by(name='moves', parent_id=1).first()
-	access_token = moves_service.access_secret
-
-	Moves = moves.MovesClient(settings['moves_client_id'], settings['moves_client_secret'])
-	Moves.access_token = access_token
-
-	# if the date is none, find the earliest date with data
-	# if that date is greater than the signup date, fetch the moves data for the day
-	start_date = session.query(MovesSegment) \
-		    .filter_by(parent_id=1) \
-		    .order_by(MovesSegment.start_time) \
-		    .first().start_time
-
-	dates = [(start_date - datetime.timedelta(days=offset)) \
-				.strftime('%Y%m%d') for offset in range(1,50)]
-
-	for date in dates:
-		request_url = 'user/storyline/daily/%s' % date
-		data = Moves.api(request_url, 'GET', params={'access_token': access_token}).json()
-
-		m._on_data(data)
-		time.sleep(.25)
-
-	return "suceess"

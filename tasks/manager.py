@@ -20,6 +20,7 @@ current_services = [
 	'moves', 'fitbit', 'withings',
 	'open_paths', 'runkeeper'
 ]
+
 services = {
 	'moves': {'update_info': moves.next_import_date_range, 'import': moves.update_resource}
 }

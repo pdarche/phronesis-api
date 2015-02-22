@@ -29,11 +29,6 @@ def update_fitbit():
 	import_fitbit.delay(5)
 
 
-def update_moves():
-    print "trying to fetch"
-    import_moves.delay()
-	
-
 class TornadoApplication(tornado.web.Application):
     def __init__(self):
         tornado.web.Application.__init__(self, url_patterns, ui_methods=ui_methods, **settings)
@@ -49,3 +44,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
