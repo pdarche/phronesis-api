@@ -25,6 +25,19 @@ moves = mvs.MovesClient(access_token=moves_profile['access_token']['access_token
 # NOTE: Moves API documentation: https://dev.moves-app.com/docs/api_summaries
 # NOTE: MOVES API stores datetimes as UTC
 # NOTE: the Moves API ratelimits at 60 requirest/hour and 2000 requests/day
+
+
+# def earliest_record(profile, record_type):
+#     """ Finds the earliest update for a moves record """
+
+#     record = db.moves.find_one({
+#         '$query': {'record_type': record_type, 'phro_user_id': profile['phro_user_id']},
+#         '$orderby': {'last_update': ordering}
+#     })
+
+#     return record
+
+
 def next_import_date_range(profile, record_type):
     """ Creates a 30-day range for the records to fetch based
     on the earliest date in the db.
@@ -111,12 +124,6 @@ def fetch_resource(resource, start_date, end_date, update_since=None):
     return resources
 
 
-def transform_resources(resources, record_type, profile):
-    """ inserts raw Moves resources into the staging database. """
-    for resource in resources:
-        yield transform_resource(resource, record_type, profile)
-
-
 def transform_resource(resource, record_type, profile):
     """ Adds metadata to a move source record. """
     update_datetime = dateutil.parser.parse(resource['lastUpdate'])
@@ -128,6 +135,12 @@ def transform_resource(resource, record_type, profile):
     }
 
     return transformed
+
+
+def transform_resources(resources, record_type, profile):
+    """ Adds some phro metadata to raw Moves resources. """
+    for resource in resources:
+        yield transform_resource(resource, record_type, profile)
 
 
 def insert_resources(transformed_resources):
@@ -144,9 +157,8 @@ def insert_resources(transformed_resources):
     return res
 
 
-def update_resource(record_type, profile, update_info):
+def update_resource(profile, record_type, update_info):
     """ Updates records for a given moves record type. """
-    # update_info = next_import_date_range(profile['profile'], record_type)
     resources = fetch_resource(
                     record_type,
                     update_info['start_date'],
@@ -157,4 +169,16 @@ def update_resource(record_type, profile, update_info):
     inserted = insert_resources(transformed)
 
     return inserted
+
+
+def backfill_resource_type(profile, record_type):
+    """ Finds the dates to backfill and """
+    update_info = next_import_date_range(profile, record_type)
+    if update_info:
+        updated_ids = update_resource(profile, record_type, update_info)
+    else:
+        return None
+
+    return updated_ids
+
 

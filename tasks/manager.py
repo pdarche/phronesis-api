@@ -20,24 +20,7 @@ current_services = [
 	'moves', 'fitbit', 'withings',
 	'open_paths', 'runkeeper'
 ]
-
-def backfill_status(service, user):
-	""" Determines whether data should continue to be
-	backfilled for a given service
-
-	Args:
-		service: String of the service to be checked
-		user: Dict of the Phronesis user
-
-	"""
-	if service not in current_services:
-		raise ValueError('Invalid Moves resource.')
-
-	profile = db.profiles.find_one(
-		{'service': service, 'phro_user_id': user['id']})
-
-
-def backfill_serivice(service, profile):
-	""" Backfills """
-	pass
+services = {
+	'moves': {'update_info': moves.next_import_date_range, 'import': moves.update_resource}
+}
 

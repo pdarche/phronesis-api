@@ -7,7 +7,6 @@ import pandas as pd
 import requests
 import fitbit
 import moves
-
 # TODO: refactor import *
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
@@ -15,10 +14,54 @@ from sqlalchemy.orm import sessionmaker
 from models.user import *
 from settings import settings
 
+import manager
+
 engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
 Session = sessionmaker(bind=engine)
 session = Session()
+
 celery = clry.Celery('tasks', broker='amqp://guest@localhost//')
+
+
+current_services = [
+	'moves', 'fitbit', 'withings',
+	'open_paths', 'runkeeper'
+]
+
+service_backfillers = {
+	'moves': backfill_moves_resources
+}
+
+
+def backfill_service(service, user):
+	""" Determines whether data should continue to be
+	backfilled for a given service
+
+	Args:
+		service: String of the service to be checked
+		user: Dict of the Phronesis user
+
+	"""
+	if service not in current_services:
+		raise ValueError('Invalid Moves resource.')
+
+	profile = db.profiles.find_one(
+		{'service': service, 'phro_user_id': user['id']})
+
+	if profile:
+		# execute the celery task to backfill the data
+		service_backfillers[service](profile)
+	else:
+		return None
+
+
+def backfill_moves_resources(profile):
+	""" Backfills moves resources. """
+    resource_types = ['summary', 'activities', 'places', 'storyline']
+
+    for resource_type in resource_types:
+    	# this should also be a celery subtask
+    	movesapp.backfill_resource_type(profile, resource_type)
 
 
 @celery.task
@@ -26,9 +69,10 @@ def etl_manager():
 	""" Executes service etl management functions for services
 	that need to be backfilled and for services who don't
 	offer subscribe functionality
-
 	"""
-	pass
+	for service in current_services:
+		# This should be a subtask!
+		backfill_service(service, user)
 
 
 @celery.task
