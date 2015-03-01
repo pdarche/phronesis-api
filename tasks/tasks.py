@@ -6,27 +6,21 @@ import celery as clry
 import pandas as pd
 import requests
 import fitbit
-# TODO: refactor import *
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
 
 from settings import settings
-# TODO: refactor import *
 from models.user import *
 import etl.movesapp as moves
 
 engine = create_engine('postgresql+psycopg2://postgres:Morgortbort1!@localhost/pete')
 Session = sessionmaker(bind=engine)
 session = Session()
-
 celery = clry.Celery('tasks', broker='amqp://guest@localhost//')
-
-
 current_services = [
 	'moves', 'fitbit', 'withings',
 	'open_paths', 'runkeeper'
 ]
-
 service_backfillers = {
 	'moves': backfill_moves_resources
 }

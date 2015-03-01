@@ -27,19 +27,55 @@ moves = mvs.MovesClient(access_token=moves_profile['access_token']['access_token
 # NOTE: the Moves API ratelimits at 60 requirest/hour and 2000 requests/day
 
 
-# def earliest_record(profile, record_type):
-#     """ Finds the earliest update for a moves record """
+def nonstaged_dates(profile, record_type):
+    """ Finds dates that aren't in the staging db for a given
+    Moves record type
+    """
+    curr_dates = existing_dates(profile, record_type)
+    all_dates = service_daterange(profile['profile']['firstDate'])
+    date_diff = [date for date in all_dates if date not in curr_dates]
 
-#     record = db.moves.find_one({
-#         '$query': {'record_type': record_type, 'phro_user_id': profile['phro_user_id']},
-#         '$orderby': {'last_update': ordering}
-#     })
-
-#     return record
+    return date_diff
 
 
-def next_import_date_range(profile, record_type):
-    """ Creates a 30-day range for the records to fetch based
+def existing_dates(profile, record_type):
+    """ Finds the earliest update for a moves record. """
+
+    docs = db.moves.find({
+        'record_type': record_type,
+        'phro_user_id': profile['phro_user_id']
+        }, {'date': 1})
+    dates = [doc['date'].date() for doc in docs]
+
+    return dates
+
+
+def service_daterange(start_date):
+    """ Creates a list of datatime date objects from starting with
+    the date the person joined Moves to today.
+    """
+    base_date = dateutil.parser.parse(start_date)
+    today = datetime.datetime.today()
+    numdays = (today - base_date).days
+    dates = [(today - datetime.timedelta(days=x)).date() for x in range(0, numdays)]
+
+    return dates
+
+
+def last_staged_record_update_(profile, record_type):
+    """ Finds the update time of the last staged Moves
+    of a given type.
+    """
+    record = db.moves.find_one({
+        '$query': {'record_type': record_type, 'phro_user_id': profile['phro_user_id']},
+        '$orderby': {'last_update': 1}
+    })
+
+    return record
+
+
+def next_import_date_range(date_list):
+    """ Creates a range information for the records to fetch based
     on the earliest date in the db.
 
     Args:
@@ -51,44 +87,24 @@ def next_import_date_range(profile, record_type):
         of the resources to be fetched
     """
 
-    join_date = datetime.datetime.strptime(profile['firstDate'], '%Y%m%d')
+    sorted_dates = sorted(date_list, reverse=True)
+    offset = 30
+    dates_len = len(sorted_dates)
 
-    # TODO: thinkg about localization strategy
-    if db.moves.find({'record_type': record_type}).count():
-        last_import_record = db.moves.find({'record_type': record_type})\
-                                        .sort('last_update', 1).limit(1)[0]
-        start_date = last_import_record['last_update'] - datetime.timedelta(30)
-        end_date = last_import_record['last_update']
-        last_update = last_import_record['last_update']
-    else:
-        today = datetime.datetime.today()
-        start_date = today - datetime.timedelta(30)
-        end_date = today
-        last_update = datetime.datetime.now()
+    if dates_len < 30:
+        offset = dates_len
 
-    if start_date == join_date:
-        return None
-
-    elif start_date < join_date:
-        start_date = join_date
+    end = date_list[0].strftime('%Y%m%d')
+    start = datetime.timedelta(offset).strftime('%Y%m%d')
 
     range_info = {
         'start_date': start_date.strftime('%Y%m%d'),
         'end_date': end_date.strftime('%Y%m%d'),
-        'last_update': last_update.strftime('%H%M%S'),
+        'last_update': None,
         'timezone': 'UTC'
     }
 
     return range_info
-
-
-def missing_dates():
-    """ Finds any dates missing between today and Moves
-    join date for a record type (summary, activity, etc.).
-    """
-    # fetch covered date ranges
-    # fetch the dates between today and the signup date
-    pass
 
 
 def update_access_token():
@@ -127,10 +143,12 @@ def fetch_resource(resource, start_date, end_date, update_since=None):
 def transform_resource(resource, record_type, profile):
     """ Adds metadata to a move source record. """
     update_datetime = dateutil.parser.parse(resource['lastUpdate'])
+    date_datetime = dateutil.parser.parse(resource['date'])
     transformed = {
         'phro_user_id': profile['phro_user_id'],
         'record_type': record_type,
         'last_update': update_datetime,
+        'date': date_datetime,
         'data': resource
     }
 
