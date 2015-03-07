@@ -2,6 +2,7 @@
 
 import datetime
 import dateutil.parser
+import logging
 
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
@@ -62,45 +63,49 @@ def service_daterange(start_date):
     return dates
 
 
-def last_staged_record_update_(profile, record_type):
+def last_update_datetime(profile, record_type):
     """ Finds the update time of the last staged Moves
     of a given type.
     """
-    record = db.moves.find_one({
+    last_update = db.moves.find_one({
         '$query': {'record_type': record_type, 'phro_user_id': profile['phro_user_id']},
-        '$orderby': {'last_update': 1}
+        '$orderby': {'last_update': -1}
     })
 
-    return record
+    if not last_update:
+        last_update = dateutil.parser.parse(profile['profile']['firstDate'])
+    else:
+        last_update = last_update['last_update']
+
+    return last_update
 
 
-def next_import_date_range(date_list):
+def next_import_date_range(last_update):
     """ Creates a range information for the records to fetch based
     on the earliest date in the db.
 
     Args:
-        profile: Dict of the Phronesis user's Moves profile.
-        record_type: String of the type of record to pull
+        last_update: Datetime of the last moves update of the moves
+        resource type.
 
     Returns:
         range_info: Dict of the start, end, update time, and timezone
         of the resources to be fetched
     """
 
-    sorted_dates = sorted(date_list, reverse=True)
-    offset = 30
-    dates_len = len(sorted_dates)
+    offset = (datetime.datetime.now() - last_update).days
 
-    if dates_len < 30:
-        offset = dates_len
+    if offset > 30:
+        offset = 30
 
-    end = date_list[0].strftime('%Y%m%d')
-    start = datetime.timedelta(offset).strftime('%Y%m%d')
+    start_date = last_update.strftime('%Y%m%d')
+    end_date = (last_update + datetime.timedelta(offset)).strftime('%Y%m%d')
+    last_update = last_update.strftime('%H:%M:%S')
 
     range_info = {
-        'start_date': start_date.strftime('%Y%m%d'),
-        'end_date': end_date.strftime('%Y%m%d'),
-        'last_update': None,
+        'start_date': start_date,
+        'end_date': end_date,
+        'last_update': last_update,
         'timezone': 'UTC'
     }
 
@@ -190,8 +195,13 @@ def update_resource(profile, record_type, update_info):
 
 
 def backfill_resource_type(profile, record_type):
-    """ Finds the dates to backfill and """
-    update_info = next_import_date_range(profile, record_type)
+    """ Finds the last date data has been backfilled to and
+    fetches and inserts that data for the phronesis user into the
+    raw data database.
+    """
+    last_update = last_update_datetime(profile, record_type)
+    update_info = next_import_date_range(last_update)
+
     if update_info:
         updated_ids = update_resource(profile, record_type, update_info)
     else:
