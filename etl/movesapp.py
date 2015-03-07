@@ -147,8 +147,13 @@ def fetch_resource(resource, start_date, end_date, update_since=None):
 
 def transform_resource(resource, record_type, profile):
     """ Adds metadata to a move source record. """
-    update_datetime = dateutil.parser.parse(resource['lastUpdate'])
     date_datetime = dateutil.parser.parse(resource['date'])
+
+    if resource.has_key('lastUpdate'):
+        update_datetime = dateutil.parser.parse(resource['lastUpdate'])
+    else:
+        update_datetime = date_datetime
+
     transformed = {
         'phro_user_id': profile['phro_user_id'],
         'record_type': record_type,
@@ -174,7 +179,9 @@ def insert_resources(transformed_resources):
         res = db.moves.insert(transformed_resources)
     except pymongo.errors.BulkWriteError, results:
         res = db.moves.remove(results)
-    except:
+        logging.error('BulkWriteError')
+    except Exception, e:
+        logging.error(e.message)
         res = None
 
     return res
