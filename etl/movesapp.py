@@ -4,12 +4,12 @@ import datetime
 import dateutil.parser
 import logging
 
-from sqlalchemy import *
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import pymongo
 import moves as mvs
 
-from models.user import *
+from models.user import User
 
 client = pymongo.MongoClient('localhost', 27017)
 db = client.phronesis_dev
@@ -19,8 +19,8 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 user = session.query(User).filter_by(email_address='pdarche@gmail.com').first()
-moves_profile = db.profiles.find_one({"phro_user_email": user.email_address})
-moves = mvs.MovesClient(access_token=moves_profile['access_token']['access_token'])
+mvs_prfl = db.profiles.find_one({"phro_user_email": user.email_address})
+moves = mvs.MovesClient(access_token=mvs_prfl['access_token']['access_token'])
 
 # TODO: NEED to understand Moves' subscription to know how to handle updating
 # NOTE: Moves API documentation: https://dev.moves-app.com/docs/api_summaries
@@ -29,7 +29,7 @@ moves = mvs.MovesClient(access_token=moves_profile['access_token']['access_token
 
 def nonstaged_dates(profile, record_type):
     """ Finds dates that aren't in the staging db for a given
-    Moves record type
+    Moves record type.
     """
     curr_dates = existing_dates(profile, record_type)
     all_dates = service_daterange(profile['profile']['firstDate'])
@@ -136,15 +136,15 @@ def fetch_resource(resource, start_date, end_date, update_since=None):
     if resource not in ['summary', 'activities', 'places', 'storyline']:
         raise ValueError('Invalid Moves resource.')
 
-    resource_path = 'user/%s/daily?from=%s&to=%s' % (resource, start_date, end_date)
+    rsrc_path = 'user/%s/daily?from=%s&to=%s' % (resource, start_date, end_date)
 
     if update_since:
-        resource_path = "%s&updateSince=T%sZ" % (resource_path, update_since)
+        rsrc_path = "%s&updateSince=T%sZ" % (rsrc_path, update_since)
 
     try:
-        resources = moves.api(resource_path, 'GET').json()
-    except Exception, e:
-        logging.error(e.message)
+        resources = moves.api(rsrc_path, 'GET').json()
+    except Exception, exception:
+        logging.error(exception.message)
         return []
 
     return resources
@@ -185,8 +185,8 @@ def insert_resources(transformed_resources):
     except pymongo.errors.BulkWriteError, results:
         res = db.moves.remove(results)
         logging.error('BulkWriteError')
-    except Exception, e:
-        logging.error(e.message)
+    except Exception, exception:
+        logging.error(exception.message)
         res = None
 
     return res
