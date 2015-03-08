@@ -58,7 +58,7 @@ def service_daterange(start_date):
     today = datetime.datetime.today()
     numdays = (today - base_date).days
     dates = [(today - datetime.timedelta(days=x)).date()
-                                for x in range(0, numdays)]
+                                    for x in range(0, numdays)]
 
     return dates
 
@@ -97,8 +97,8 @@ def next_import_date_range(last_update):
     """
     offset = (datetime.datetime.now() - last_update).days
 
-    if offset > 30:
-        offset = 30
+    if offset > 6:
+        offset = 6
 
     start_date = last_update.strftime('%Y%m%d')
     end_date = (last_update + datetime.timedelta(offset)).strftime('%Y%m%d')
@@ -138,13 +138,16 @@ def fetch_resource(resource, start_date, end_date, update_since=None):
 
     rsrc_path = 'user/%s/daily?from=%s&to=%s' % (resource, start_date, end_date)
 
+    if resource == 'storyline':
+        rsrc_path = "%s&trackPoints=true" % rsrc_path
+
     if update_since:
-        rsrc_path = "%s&updateSince=T%sZ" % (rsrc_path, update_since)
+        rsrc_path = "%s&updateSince>T%sZ" % (rsrc_path, update_since)
 
     try:
         resources = moves.api(rsrc_path, 'GET').json()
     except Exception, exception:
-        logging.error(exception.message)
+        logging.error(e.message)
         return []
 
     return resources
