@@ -27,7 +27,6 @@ moves = mvs.MovesClient(access_token=moves_profile['access_token']['access_token
 # NOTE: MOVES API stores datetimes as UTC
 # NOTE: the Moves API ratelimits at 60 requirest/hour and 2000 requests/day
 
-
 def nonstaged_dates(profile, record_type):
     """ Finds dates that aren't in the staging db for a given
     Moves record type
@@ -58,7 +57,8 @@ def service_daterange(start_date):
     base_date = dateutil.parser.parse(start_date)
     today = datetime.datetime.today()
     numdays = (today - base_date).days
-    dates = [(today - datetime.timedelta(days=x)).date() for x in range(0, numdays)]
+    dates = [(today - datetime.timedelta(days=x)).date()
+                                for x in range(0, numdays)]
 
     return dates
 
@@ -68,7 +68,10 @@ def last_update_datetime(profile, record_type):
     of a given type.
     """
     last_update = db.moves.find_one({
-        '$query': {'record_type': record_type, 'phro_user_id': profile['phro_user_id']},
+        '$query': {
+            'record_type': record_type,
+            'phro_user_id': profile['phro_user_id']
+        },
         '$orderby': {'last_update': -1}
     })
 
@@ -92,7 +95,6 @@ def next_import_date_range(last_update):
         range_info: Dict of the start, end, update time, and timezone
         of the resources to be fetched
     """
-
     offset = (datetime.datetime.now() - last_update).days
 
     if offset > 30:
@@ -131,7 +133,6 @@ def fetch_resource(resource, start_date, end_date, update_since=None):
     Raises:
         ValueError: resource requested is not a moves resource.
     """
-
     if resource not in ['summary', 'activities', 'places', 'storyline']:
         raise ValueError('Invalid Moves resource.')
 
@@ -140,7 +141,11 @@ def fetch_resource(resource, start_date, end_date, update_since=None):
     if update_since:
         resource_path = "%s&updateSince=T%sZ" % (resource_path, update_since)
 
-    resources = moves.api(resource_path, 'GET').json()
+    try:
+        resources = moves.api(resource_path, 'GET').json()
+    except Exception, e:
+        logging.error(e.message)
+        return []
 
     return resources
 
