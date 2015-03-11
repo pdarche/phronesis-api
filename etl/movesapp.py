@@ -40,7 +40,6 @@ def nonstaged_dates(profile, record_type):
 
 def existing_dates(profile, record_type):
     """ Finds the earliest update for a moves record. """
-
     docs = db.moves.find({
         'record_type': record_type,
         'phro_user_id': profile['phro_user_id']
@@ -147,8 +146,9 @@ def fetch_resource(resource, start_date, end_date, update_since=None):
     try:
         resources = moves.api(rsrc_path, 'GET').json()
     except Exception, exception:
-        logging.error(e.message)
-        return []
+        logging.error(exception.message)
+        raise
+        # return []
 
     return resources
 
@@ -209,7 +209,7 @@ def update_resource(profile, record_type, update_info):
     return inserted
 
 
-def backfill_resource_type(profile, record_type):
+def import_resource_type(profile, record_type):
     """ Finds the last date data has been backfilled to and
     fetches and inserts that data for the phronesis user into the
     raw data database.

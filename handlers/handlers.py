@@ -18,8 +18,8 @@ import tornado.gen
 from settings import settings
 from models.user import *
 import mixins.mixins as mixins
-from tasks.tasks import celtest
-from tasks.tasks import import_moves
+# from tasks.tasks import celtest
+# from tasks.tasks import import_moves
 
 client = pymongo.MongoClient('localhost', 27017)
 db = client.phronesis_dev
